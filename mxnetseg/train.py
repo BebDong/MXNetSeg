@@ -124,7 +124,8 @@ def fit(ctx, log_interval=5, no_val=False, logger=None):
                 nd.waitall()
             pix_acc, mean_iou = metric.get()
             wandb.log({'val_PA': pix_acc, 'val_mIoU': mean_iou,
-                       'val_loss': val_loss / len(val_iter) + 1})
+                       'val_loss': val_loss / len(val_iter) + 1,
+                       'custom_step': epoch})
             metric.reset()
             if mean_iou > best_score:
                 save_checkpoint(model=net,

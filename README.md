@@ -19,6 +19,7 @@ This project provides modular implementation for state-of-the-art semantic segme
 | [PSPNet](http://openaccess.thecvf.com/content_cvpr_2017/papers/Zhao_Pyramid_Scene_Parsing_CVPR_2017_paper.pdf) | CVPR 2017  |
 | [SeENet](http://openaccess.thecvf.com/content_ICCV_2019/papers/Pang_Towards_Bridging_Semantic_Gap_to_Improve_Semantic_Segmentation_ICCV_2019_paper.pdf) | ICCV 2019  |
 | [SwiftNet/SwiftNetPR](http://openaccess.thecvf.com/content_CVPR_2019/papers/Orsic_In_Defense_of_Pre-Trained_ImageNet_Architectures_for_Real-Time_Semantic_Segmentation_CVPR_2019_paper.pdf) | CVPR 2019  |
+| [SemanticFPN](https://openaccess.thecvf.com/content_CVPR_2019/papers/Kirillov_Panoptic_Feature_Pyramid_Networks_CVPR_2019_paper.pdf) | CVPR 2019  |
 
 ## Benchmarks
 
@@ -34,6 +35,12 @@ We note that 'ss' denotes single scale testing and 'ms' multi-scale and flipping
 | PSPNet    | ResNet101 | &#x2713; | *train_fine* |  *val*  |   78.19   |   79.49   | &#x2717; |
 | DeepLabv3 | ResNet101 | &#x2713; | *train_fine* |  *val*  |   78.72   |     -     | &#x2717; |
 | DANet     | ResNet101 | &#x2713; | *train_fine* |  *val*  |   79.73   |   80.87   | &#x2717; |
+
+### ADE20K
+
+| Model  | Backbone  |  Dilate  | TrainSet | EvalSet | PA (SS) | mIoU (ss) | PA (ms) | mIoU (ms) |
+| :----: | :-------: | :------: | :------: | :-----: | :-----: | :-------: | :-----: | :-------: |
+| PSPNet | ResNet101 | &#x2713; | *train*  |  *val*  |  80.14  |   42.87   |  80.86  |   43.67   |
 
 ## Environment
 

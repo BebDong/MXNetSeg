@@ -14,6 +14,7 @@ from .seenet import *
 from .swiftnet import *
 from .danet import *
 from .acfnet import *
+from .sfpn import *
 
 from .canet import *
 
@@ -33,6 +34,7 @@ _seg_models = {
     'swiftnetpr': get_swiftnet_pyramid,
     'danet': get_danet,
     'acfnet': get_acfnet,
+    'semanticfpn': get_semantic_fpn,
 
     'canet': get_canet,
 }

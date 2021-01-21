@@ -1,33 +1,33 @@
 # config hyper-parameters here concerning a training trial
 
-# [model info]
+# [model]
 # supported models (case-insensitive):
 # 'acfnet', 'att2scale', 'bisenet', 'danet', 'deeplabv3', 'deeplabv3plus', 'denseaspp',
-# 'fcn', 'ladder', 'pspnet', 'seenet', 'swiftnet', 'swiftnetpr',
+# 'fcn', 'ladder', 'pspnet', 'seenet', 'swiftnet', 'swiftnetpr', 'semanticfpn',
 # 'canet', 'eprnet'
-model_name: fcn
-backbone: resnet18
+model_name: pspnet
+backbone: resnet101
 backbone_pretrain: True
 norm: sbn
-aux: False
-aux_weight: 0.5
+aux: True
+aux_weight: 0.4
 resume: ~
 lr_mult: 1
 dilate: True
 
-# [dataset info]
+# [dataset]
 # supported dataset (case-insensitive):
 # 'ade20k', 'COCO', 'VOC2012', 'SBD', 'VOCAug', 'PContext', 'SUNRGBD', 'NYU', 'SiftFlow',
 # 'Stanford', 'aeroscapes', 'cityscapes', 'CamVid', 'CamVidFull', 'GATECH', 'Mapillary',
 # 'BDD', 'KITTIZhang', 'KITTIXu', 'KITTIRos', 'MHPv1'
-data_name: Cityscapes
-crop_size: 768
-base_size: 2048
+data_name: ade20k
+crop_size: 576
+base_size: 640
 
-# [optimizer info]
+# [optimizer]
 # supported optimizers: 'sgd', 'nag', 'adam'
 # supported learning rate scheduler: 'poly', 'cosine', 'constant', 'step', 'linear'
-lr: 1.e-3
+lr: 0.01
 target_lr: 0
 wd: 1.e-4
 momentum: 0.9
@@ -44,6 +44,6 @@ adam:
   adam_beta2: 0.999
 
 # [training]
-epochs: 200
-bs_train: 8
-bs_val: 16
+epochs: 120
+bs_train: 16
+bs_val: 32

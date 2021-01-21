@@ -5,7 +5,7 @@ from mxnet.gluon import nn
 from .activation import Activation
 
 __all__ = ['conv_block', 'ConvBlock', 'InverseConvBlock', 'DepthSepConvolution',
-           'SpaceSepConvolution', 'HybridConcurrentSum']
+           'SpaceSepConvolution', 'HybridConcurrentSum', 'UpscaleLayer']
 
 
 class ConvBlock(nn.HybridBlock):
@@ -131,7 +131,22 @@ class HybridConcurrentSum(nn.HybridSequential):
 
     def hybrid_forward(self, F, x):
         out = []
-        for block in self._children.values():
-            out.append(block(x))
+        for blk in self._children.values():
+            out.append(blk(x))
         out = F.ElementWiseSum(*out)
         return out
+
+
+class UpscaleLayer(nn.HybridSequential):
+    """
+    Up-scale layer where each up-sampling stage consists of Conv-BN-ReLU and 2x up.
+    """
+
+    def __init__(self, prefix=None, params=None):
+        super(UpscaleLayer, self).__init__(prefix=prefix, params=params)
+
+    def hybrid_forward(self, F, x):
+        for blk in self._children.values():
+            x = blk(x)
+            x = F.contrib.BilinearResize2D(x, scale_height=2., scale_width=2.)
+        return x

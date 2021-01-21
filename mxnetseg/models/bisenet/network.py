@@ -23,9 +23,7 @@ class BiSeNet(SegBaseResNet):
         super(BiSeNet, self).__init__(nclass, aux, backbone, height, width, base_size,
                                       crop_size, pretrained_base, dilate=False,
                                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-        self.head = _BiSeNetHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                 height=self._up_kwargs['height'] // 8,
-                                 width=self._up_kwargs['width'] // 8)
+        self.head = _BiSeNetHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         if self.aux:
             self.auxlayer = FCNHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
                                     drop_out=.0)
@@ -47,37 +45,30 @@ class BiSeNet(SegBaseResNet):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
-        self.head.up_kwargs['height'] = h // 8
-        self.head.up_kwargs['width'] = w // 8
-        self.head.global_flow.up_kwargs['height'] = h // 8
-        self.head.global_flow.up_kwargs['width'] = w // 8
         return self.forward(x)[0]
 
 
 class _BiSeNetHead(nn.HybridBlock):
-    def __init__(self, nclass, height, width, norm_layer=nn.BatchNorm, norm_kwargs=None):
+    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_BiSeNetHead, self).__init__()
-        self.up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
             self.spatial_path = _SpatialPath(128, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.global_flow = GlobalFlow(128, in_channels=512, norm_layer=norm_layer,
-                                          norm_kwargs=norm_kwargs, height=height, width=width)
-            self.refine_c4 = _ARModule(128, in_channels=512, norm_layer=norm_layer,
-                                       norm_kwargs=norm_kwargs)
-            self.refine_c3 = _ARModule(128, in_channels=256, norm_layer=norm_layer,
-                                       norm_kwargs=norm_kwargs)
+            self.global_flow = GlobalFlow(128, 512, norm_layer, norm_kwargs)
+            self.refine_c4 = _ARModule(128, 512, norm_layer, norm_kwargs)
+            self.refine_c3 = _ARModule(128, 256, norm_layer, norm_kwargs)
             self.proj = ConvBlock(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.fusion = _FFModule(256, norm_layer, norm_kwargs, reduction=1)
-            self.seg = FCNHead(nclass, 256, norm_layer, norm_kwargs, drop_out=.0, )
+            self.seg = FCNHead(nclass, 256, norm_layer, norm_kwargs, drop_out=.0)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
-        c3, c4 = args[0], args[1]
+        c3, c4 = tuple(args)
         spatial = self.spatial_path(x)
         global_context = self.global_flow(c4)
+        global_context = F.contrib.BilinearResize2D(global_context, like=spatial, mode='like')
         refine_c4 = self.refine_c4(c4)
-        refine_c4 = F.contrib.BilinearResize2D(refine_c4, **self.up_kwargs)
+        refine_c4 = F.contrib.BilinearResize2D(refine_c4, like=spatial, mode='like')
         refine_c3 = self.refine_c3(c3)
-        refine_c3 = F.contrib.BilinearResize2D(refine_c3, **self.up_kwargs)
+        refine_c3 = F.contrib.BilinearResize2D(refine_c3, like=spatial, mode='like')
         context = self.proj(global_context + refine_c4 + refine_c3)
         out = self.fusion(spatial, context)
         out = self.seg(out)

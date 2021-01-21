@@ -10,8 +10,8 @@ __all__ = ['ACFNet', 'get_acfnet']
 class ACFNet(SegBaseResNet):
     """
     Attentional Class Feature Network.
-    Reference: [1] F. Zhang et al., “ACFNet: Attentional Class Feature Network for Semantic Segmentation,”
-        in IEEE International Conference on Computer Vision, 2019.
+    Reference: [1] F. Zhang et al., “ACFNet: Attentional Class Feature Network for
+        Semantic Segmentation,” in IEEE International Conference on Computer Vision, 2019.
     """
 
     def __init__(self, nclass, backbone='resnet50', aux=False, height=None, width=None,
@@ -53,7 +53,7 @@ class _ACFHead(nn.HybridBlock):
         super(_ACFHead, self).__init__()
         with self.name_scope():
             self.aspp = ASPP(512, in_channels, norm_layer, norm_kwargs,
-                             atrous_rates=(12, 24, 36), gap=False)
+                             rates=(12, 24, 36), pool_branch=False)
             self.coarse_head = FCNHead(nclass, 512, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.acf = _ACFModule(512, 512, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.head = FCNHead(nclass, 1024, norm_layer=norm_layer, norm_kwargs=norm_kwargs)

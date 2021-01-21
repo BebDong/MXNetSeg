@@ -2,6 +2,8 @@
 
 from mxnet import init
 from mxnet.gluon import nn
+from mxnet.gluon.contrib.nn import HybridConcurrent
+
 from .naive import ConvBlock
 
 __all__ = ['GlobalFlow', 'PyramidPooling', 'DenseASPPBlock', 'SeEModule', 'SelfAttention',
@@ -13,20 +15,18 @@ class GlobalFlow(nn.HybridBlock):
     Global Average Pooling to obtain global receptive field.
     """
 
-    def __init__(self, channels, in_channels=0, height=60, width=60, norm_layer=nn.BatchNorm,
-                 norm_kwargs=None, ):
+    def __init__(self, channels, in_channels=0, norm_layer=nn.BatchNorm, norm_kwargs=None, ):
         super(GlobalFlow, self).__init__()
-        self.up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
             self.gap = nn.GlobalAvgPool2D()
             self.conv1x1 = ConvBlock(channels, 1, in_channels=in_channels, norm_layer=norm_layer,
                                      norm_kwargs=norm_kwargs, activation='relu')
 
     def hybrid_forward(self, F, x, *args, **kwargs):
-        x = self.gap(x)
-        x = self.conv1x1(x)
-        x = F.contrib.BilinearResize2D(x, **self.up_kwargs)
-        return x
+        out = self.gap(x)
+        out = self.conv1x1(out)
+        out = F.contrib.BilinearResize2D(out, like=x, mode='like')
+        return out
 
 
 class PyramidPooling(nn.HybridBlock):
@@ -37,10 +37,9 @@ class PyramidPooling(nn.HybridBlock):
         Pattern Recognition (pp. 6230–6239). https://doi.org/10.1109/CVPR.2017.660
     """
 
-    def __init__(self, in_channels, height=60, width=60, norm_layer=nn.BatchNorm,
-                 norm_kwargs=None, activation='relu', reduction=4):
+    def __init__(self, in_channels, norm_layer=nn.BatchNorm, norm_kwargs=None,
+                 activation='relu', reduction=4):
         super(PyramidPooling, self).__init__()
-        self.up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
             self.conv1 = ConvBlock(in_channels // reduction, 1, in_channels=in_channels,
                                    norm_layer=norm_layer, norm_kwargs=norm_kwargs,
@@ -57,13 +56,17 @@ class PyramidPooling(nn.HybridBlock):
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         feature1 = F.contrib.BilinearResize2D(self.conv1(F.contrib.AdaptiveAvgPooling2D
-                                                         (x, output_size=1)), **self.up_kwargs)
+                                                         (x, output_size=1)),
+                                              like=x, mode='like')
         feature2 = F.contrib.BilinearResize2D(self.conv2(F.contrib.AdaptiveAvgPooling2D
-                                                         (x, output_size=2)), **self.up_kwargs)
+                                                         (x, output_size=2)),
+                                              like=x, mode='like')
         feature3 = F.contrib.BilinearResize2D(self.conv3(F.contrib.AdaptiveAvgPooling2D
-                                                         (x, output_size=3)), **self.up_kwargs)
+                                                         (x, output_size=3)),
+                                              like=x, mode='like')
         feature4 = F.contrib.BilinearResize2D(self.conv4(F.contrib.AdaptiveAvgPooling2D
-                                                         (x, output_size=6)), **self.up_kwargs)
+                                                         (x, output_size=6)),
+                                              like=x, mode='like')
         return F.concat(x, feature1, feature2, feature3, feature4, dim=1)
 
 
@@ -108,41 +111,25 @@ class ASPP(nn.HybridBlock):
     """
 
     def __init__(self, channels=256, in_channels=0, norm_layer=nn.BatchNorm, norm_kwargs=None,
-                 height=60, width=60, atrous_rates=(6, 12, 18), drop=.5, gap=True):
+                 rates=(6, 12, 18), drop=.5, pool_branch=True):
         super(ASPP, self).__init__()
-        rate1, rate2, rate3 = tuple(atrous_rates)
         with self.name_scope():
-            self.conv1x1 = ConvBlock(channels, 1, in_channels=in_channels, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs, activation='relu')
-            self.dilate1 = ConvBlock(channels, 3, padding=rate1, dilation=rate1, in_channels=in_channels,
-                                     norm_layer=norm_layer, norm_kwargs=norm_kwargs, activation='relu')
-            self.dilate2 = ConvBlock(channels, 3, padding=rate2, dilation=rate2, in_channels=in_channels,
-                                     norm_layer=norm_layer, norm_kwargs=norm_kwargs, activation='relu')
-            self.dilate3 = ConvBlock(channels, 3, padding=rate3, dilation=rate3, in_channels=in_channels,
-                                     norm_layer=norm_layer, norm_kwargs=norm_kwargs, activation='relu')
-            if gap:
-                self.pool = GlobalFlow(channels, in_channels, height, width, norm_layer, norm_kwargs)
-                num_branch = 5
-            else:
-                self.pool = None
-                num_branch = 4
-            self.proj = ConvBlock(channels, 1, in_channels=num_branch * channels, norm_layer=norm_layer,
-                                  norm_kwargs=norm_kwargs, activation='relu')
+            self.branches = HybridConcurrent(axis=1)
+            self.branches.add(ConvBlock(channels, 1, in_channels=in_channels, norm_layer=norm_layer,
+                                        norm_kwargs=norm_kwargs))
+            for rate in rates:
+                self.branches.add(ConvBlock(channels, 3, padding=rate, dilation=rate,
+                                            in_channels=in_channels, norm_layer=norm_layer,
+                                            norm_kwargs=norm_kwargs))
+            if pool_branch:
+                self.branches.add(GlobalFlow(channels, in_channels, norm_layer, norm_kwargs))
+
+            self.projection = ConvBlock(channels, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.drop = nn.Dropout(drop) if drop else None
 
     def hybrid_forward(self, F, x, *args, **kwargs):
-        x1 = self.conv1x1(x)
-        x6 = self.dilate1(x)
-        x12 = self.dilate2(x)
-        x18 = self.dilate3(x)
-        # global pool branch
-        if self.pool:
-            xp = self.pool(x)
-            out = F.concat(x1, x6, x12, x18, xp, dim=1)
-        else:
-            out = F.concat(x1, x6, x12, x18, dim=1)
-        # final projection
-        out = self.proj(out)
+        out = self.branches(x)
+        out = self.projection(out)
         if self.drop:
             out = self.drop(out)
         return out
@@ -181,8 +168,8 @@ class DenseASPPBlock(nn.HybridBlock):
             self.trans4 = ConvBlock(out_transition, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.dilate5 = ConvBlock(out_dilate, 3, padding=rate5, dilation=rate5,
                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.proj = ConvBlock(channels, 1, in_channels=3328, norm_layer=norm_layer,
-                                  norm_kwargs=norm_kwargs, activation='relu')
+            self.projection = ConvBlock(channels, 1, in_channels=3328, norm_layer=norm_layer,
+                                        norm_kwargs=norm_kwargs, activation='relu')
             self.drop = nn.Dropout(0.5)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
@@ -205,7 +192,7 @@ class DenseASPPBlock(nn.HybridBlock):
         out5 = self.dilate5(out5)
 
         out = F.concat(x, out1, out2, out3, out4, out5, dim=1)
-        out = self.proj(out)
+        out = self.projection(out)
         return self.drop(out)
 
 
@@ -261,18 +248,15 @@ class LateralFusion(nn.HybridBlock):
          IEEE conference on computer vision and pattern recognition. 2019: 12607-12616.
     """
 
-    def __init__(self, capacity, height, width, norm_layer=nn.BatchNorm, norm_kwargs=None):
+    def __init__(self, capacity, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(LateralFusion, self).__init__()
-        self.up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
-            self.conv1x1 = ConvBlock(capacity, 1, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs, activation='relu')
-            self.conv3x3 = ConvBlock(capacity, 3, 1, 1, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs, activation='relu')
+            self.conv1x1 = ConvBlock(capacity, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3x3 = ConvBlock(capacity, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         high, low = x, args[0]
-        high = F.contrib.BilinearResize2D(high, **self.up_kwargs)
+        high = F.contrib.BilinearResize2D(high, like=low, mode='like')
         low = self.conv1x1(low)
         out = high + low
         return self.conv3x3(out)
@@ -311,5 +295,4 @@ class SelfAttention(nn.HybridBlock):
         out = F.batch_dot(value, attention, transpose_b=True)  # NC(HW)
         out = F.reshape_like(out, x, lhs_begin=2, lhs_end=None, rhs_begin=2, rhs_end=None)
         out = F.broadcast_mul(gamma, out) + x
-
         return out

@@ -22,16 +22,15 @@ class SwiftResNetPyramid(SegBaseResNet):
                                                  crop_size, pretrained_base, dilate=False,
                                                  norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         with self.name_scope():
-            self.head = _SwiftNetHead(nclass, self._up_kwargs['height'], self._up_kwargs['width'],
-                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.head = _SwiftNetHead(nclass, 128, norm_layer, norm_kwargs)
             if self.aux:
                 self.auxlayer = AuxHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         c1, c2, c3, c4 = self.base_forward(x)
-        x_half = F.contrib.BilinearResize2D(x, height=self._up_kwargs['height'] // 2,
+        xh = F.contrib.BilinearResize2D(x, height=self._up_kwargs['height'] // 2,
                                             width=self._up_kwargs['width'] // 2)
-        c1h, c2h, c3h, c4h = self.base_forward(x_half)
+        c1h, c2h, c3h, c4h = self.base_forward(xh)
         outputs = []
         out = self.head(c4h, c3h, c2h, c1h, c4, c3, c2, c1)
         out = F.contrib.BilinearResize2D(out, **self._up_kwargs)
@@ -48,33 +47,20 @@ class SwiftResNetPyramid(SegBaseResNet):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
-        self.head.fusion_32x.up_kwargs['height'] = h // 32
-        self.head.fusion_32x.up_kwargs['width'] = w // 32
-        self.head.fusion_16x.up_kwargs['height'] = h // 16
-        self.head.fusion_16x.up_kwargs['width'] = w // 16
-        self.head.fusion_8x.up_kwargs['height'] = h // 8
-        self.head.fusion_8x.up_kwargs['width'] = w // 8
-        self.head.final.up_kwargs['height'] = h // 4
-        self.head.final.up_kwargs['width'] = w // 4
         return self.forward(x)[0]
 
 
 class _SwiftNetHead(nn.HybridBlock):
     """SwiftNet-Pyramid segmentation head"""
 
-    def __init__(self, nclass, input_height, input_width, capacity=128, norm_layer=nn.BatchNorm,
-                 norm_kwargs=None):
+    def __init__(self, nclass, capacity=128, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_SwiftNetHead, self).__init__()
         with self.name_scope():
             self.conv1x1 = ConvBlock(capacity, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.fusion_32x = _LateralFusion(capacity, input_height // 32, input_width // 32,
-                                             norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.fusion_16x = _LateralFusion(capacity, input_height // 16, input_width // 16,
-                                             norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.fusion_8x = _LateralFusion(capacity, input_height // 8, input_width // 8,
-                                            norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.final = _LateralFusion(capacity, input_height // 4, input_width // 4, True,
-                                        norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.fusion_32x = _LateralFusion(capacity, norm_layer, norm_kwargs)
+            self.fusion_16x = _LateralFusion(capacity, norm_layer, norm_kwargs)
+            self.fusion_8x = _LateralFusion(capacity, norm_layer, norm_kwargs)
+            self.final = _LateralFusion(capacity, norm_layer, norm_kwargs, is_final=True)
             self.seg_head = FCNHead(nclass, capacity, norm_layer, norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
@@ -93,21 +79,19 @@ class _LateralFusion(nn.HybridBlock):
     decoder up-sampling module.
     """
 
-    def __init__(self, capacity, height, width, is_final=False, norm_layer=nn.BatchNorm,
-                 norm_kwargs=None):
+    def __init__(self, capacity, norm_layer=nn.BatchNorm, norm_kwargs=None, is_final=False):
         super(_LateralFusion, self).__init__()
         self.is_final = is_final
-        self.up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
             self.conv1x1 = ConvBlock(capacity, 1, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs, activation='relu')
+                                     norm_kwargs=norm_kwargs)
             self.conv3x3 = ConvBlock(capacity, 3, 1, 1, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs, activation='relu')
+                                     norm_kwargs=norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         low = args[0] if self.is_final else F.concat(args[0], args[1], dim=1)
         low = self.conv1x1(low)
-        high = F.contrib.BilinearResize2D(x, **self.up_kwargs)
+        high = F.contrib.BilinearResize2D(x, like=low, mode='like')
         out = high + low
         out = self.conv3x3(out)
         return out

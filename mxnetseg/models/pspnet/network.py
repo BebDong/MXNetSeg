@@ -22,9 +22,7 @@ class PSPNet(SegBaseResNet):
                                      pretrained_base, dilate=True, norm_layer=norm_layer,
                                      norm_kwargs=norm_kwargs)
         with self.name_scope():
-            self.head = _PyramidHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                     height=self._up_kwargs['height'] // 8,
-                                     width=self._up_kwargs['width'] // 8)
+            self.head = _PyramidHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             if self.aux:
                 self.auxlayer = FCNHead(nclass=nclass, in_channels=1024, norm_layer=norm_layer,
                                         norm_kwargs=norm_kwargs)
@@ -46,18 +44,14 @@ class PSPNet(SegBaseResNet):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
-        self.head.pool.up_kwargs['height'] = h // 8
-        self.head.pool.up_kwargs['width'] = w // 8
         return self.forward(x)[0]
 
 
 class _PyramidHead(nn.HybridBlock):
-    def __init__(self, nclass, height, width, norm_layer=nn.BatchNorm,
-                 norm_kwargs=None, activation='relu'):
+    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_PyramidHead, self).__init__()
         with self.name_scope():
-            self.pool = PyramidPooling(2048, height, width, norm_layer,
-                                       norm_kwargs, activation, reduction=4)
+            self.pool = PyramidPooling(2048, norm_layer, norm_kwargs, reduction=4)
             self.seg_head = FCNHead(nclass, 4096, norm_layer, norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):

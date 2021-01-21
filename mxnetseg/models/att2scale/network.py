@@ -23,9 +23,7 @@ class AttentionToScale(SegBaseResNet):
                                                crop_size, pretrained_base, dilate=True,
                                                norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         with self.name_scope():
-            self.head = _AttentionHead(nclass, height=self._up_kwargs['height'] // 8,
-                                       width=self._up_kwargs['width'] // 8,
-                                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.head = _AttentionHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             if self.aux:
                 self.auxlayer = AuxHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
@@ -33,10 +31,10 @@ class AttentionToScale(SegBaseResNet):
         # 1.0x scale forward
         _, _, _, c4 = self.base_forward(x)
         # 0.5x scale forward
-        x_half = F.contrib.BilinearResize2D(x,
-                                            height=self._up_kwargs['height'] // 2,
-                                            width=self._up_kwargs['width'] // 2)
-        _, _, _, c4h = self.base_forward(x_half)
+        xh = F.contrib.BilinearResize2D(x,
+                                        height=self._up_kwargs['height'] // 2,
+                                        width=self._up_kwargs['width'] // 2)
+        _, _, _, c4h = self.base_forward(xh)
         # head
         outputs = []
         x = self.head(c4, c4h)
@@ -57,8 +55,6 @@ class AttentionToScale(SegBaseResNet):
         height, width = x.shape[2:]
         self._up_kwargs['height'] = height
         self._up_kwargs['width'] = width
-        self.head.up_kwargs['height'] = height // 8
-        self.head.up_kwargs['width'] = width // 8
         return self.forward(x)[0]
 
 
@@ -68,15 +64,12 @@ class _AttentionHead(nn.HybridBlock):
     Here we feed with features from the final stage of ResNet for attention.
     """
 
-    def __init__(self, nclass, height=60, width=60, norm_layer=nn.BatchNorm,
-                 norm_kwargs=None, use_sigmoid=True):
+    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None, use_sigmoid=True):
         super(_AttentionHead, self).__init__()
         self.sigmoid = use_sigmoid
-        self.up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
             self.seg_head = FCNHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv3x3 = ConvBlock(512, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                     activation='relu')
+            self.conv3x3 = ConvBlock(512, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             if use_sigmoid:
                 self.conv1x1 = nn.Conv2D(1, 1, in_channels=512)
             else:
@@ -84,7 +77,7 @@ class _AttentionHead(nn.HybridBlock):
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         # up-sample for same size
-        c4h = F.contrib.BilinearResize2D(args[0], **self.up_kwargs)
+        c4h = F.contrib.BilinearResize2D(args[0], like=x, mode='like')
         # score map
         score_c4 = self.seg_head(x)
         score_c4h = self.seg_head(c4h)

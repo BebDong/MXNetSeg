@@ -16,14 +16,12 @@ class SeENet(SegBaseResNet):
 
     def __init__(self, nclass, backbone='resnet50', aux=True, height=None, width=None,
                  base_size=520, crop_size=480, pretrained_base=False,
-                 norm_layer=nn.BatchNorm,norm_kwargs=None, **kwargs):
+                 norm_layer=nn.BatchNorm, norm_kwargs=None, **kwargs):
         super(SeENet, self).__init__(nclass, aux, backbone, height, width, base_size, crop_size,
                                      pretrained_base, dilate=True, norm_layer=norm_layer,
                                      norm_kwargs=norm_kwargs)
         with self.name_scope():
-            self.head = _SeEHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                 height=self._up_kwargs['height'] // 4,
-                                 width=self._up_kwargs['width'] // 4)
+            self.head = _SeEHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             if self.aux:
                 self.auxlayer = FCNHead(nclass, 1024, norm_layer, norm_kwargs)
 
@@ -45,16 +43,12 @@ class SeENet(SegBaseResNet):
         height, width = x.shape[2:]
         self._up_kwargs['height'] = height
         self._up_kwargs['width'] = width
-        self.head.up_kwargs['height'] = height // 4
-        self.head.up_kwargs['width'] = width // 4
         return self.forward(x)[0]
 
 
 class _SeEHead(nn.HybridBlock):
-    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None,
-                 height=120, width=120):
+    def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_SeEHead, self).__init__()
-        self.up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
             self.seemc2 = SeEModule(128, atrous_rates=(1, 2, 4, 8), norm_layer=norm_layer,
                                     norm_kwargs=norm_kwargs, full_sample=False)
@@ -66,12 +60,12 @@ class _SeEHead(nn.HybridBlock):
                                           norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
-        c1, c2, c3, c4 = x, args[0], args[1], args[2]
+        c2, c3, c4 = tuple(args)
         c2 = self.seemc2(c2)
         c3 = self.seemc3(F.concat(c2, c3, dim=1))
         c4 = self.seemc4(F.concat(c3, c4, dim=1))
-        c4 = F.contrib.BilinearResize2D(c4, **self.up_kwargs)
-        out = self.bam(c4, c1)
+        c4 = F.contrib.BilinearResize2D(c4, like=x, mode='like')
+        out = self.bam(c4, x)
         return out
 
 

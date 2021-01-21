@@ -46,8 +46,6 @@ class CANet(SegBaseResNet):
         self._up_kwargs['width'] = width
         self.head.up_kwargs['height'] = height // 4
         self.head.up_kwargs['width'] = width // 4
-        self.head.gp.up_kwargs['height'] = height // 8
-        self.head.gp.up_kwargs['width'] = width // 8
         self.head.cp1.up_kwargs['height'] = height // 8
         self.head.cp1.up_kwargs['width'] = width // 8
         self.head.cp2.up_kwargs['height'] = height // 8
@@ -79,7 +77,7 @@ class _CAHead(nn.HybridBlock):
         width = width // 2
         with self.name_scope():
             # Chained Context Aggregation Module
-            self.gp = GlobalFlow(capacity, 2048, height, width, norm_layer, norm_kwargs)
+            self.gp = GlobalFlow(capacity, 2048, norm_layer, norm_kwargs)
             self.cp1 = _ContextFlow(capacity, stride=2, norm_layer=norm_layer,
                                     norm_kwargs=norm_kwargs, height=height, width=width)
             self.cp2 = _ContextFlow(capacity, stride=4, norm_layer=norm_layer,

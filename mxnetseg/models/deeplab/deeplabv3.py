@@ -23,9 +23,7 @@ class DeepLabv3(SegBaseResNet):
                                         norm_layer=norm_layer, norm_kwargs=norm_kwargs)
         self.output_stride = 8 if dilate else 32
         with self.name_scope():
-            self.head = _DeepLabHead(nclass, self.base_channels[3], norm_layer, norm_kwargs,
-                                     height=self._up_kwargs['height'] // self.output_stride,
-                                     width=self._up_kwargs['width'] // self.output_stride)
+            self.head = _DeepLabHead(nclass, self.base_channels[3], norm_layer, norm_kwargs)
             if self.aux:
                 self.auxlayer = FCNHead(nclass, self.base_channels[2], norm_layer, norm_kwargs)
 
@@ -46,18 +44,14 @@ class DeepLabv3(SegBaseResNet):
         h, w = x.shape[2:]
         self._up_kwargs['height'] = h
         self._up_kwargs['width'] = w
-        self.head.aspp.pool.up_kwargs['height'] = h // self.output_stride
-        self.head.aspp.pool.up_kwargs['width'] = w // self.output_stride
         return self.forward(x)[0]
 
 
 class _DeepLabHead(nn.HybridBlock):
-    def __init__(self, nclass, in_channels, norm_layer=nn.BatchNorm,
-                 norm_kwargs=None, height=60, width=60):
+    def __init__(self, nclass, in_channels, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_DeepLabHead, self).__init__()
         with self.name_scope():
-            self.aspp = ASPP(256, in_channels, norm_layer, norm_kwargs, height, width,
-                             atrous_rates=(12, 24, 36))
+            self.aspp = ASPP(256, in_channels, norm_layer, norm_kwargs, rates=(12, 24, 36))
             self.head = FCNHead(nclass, 256, norm_layer, norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):

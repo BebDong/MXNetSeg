@@ -111,8 +111,8 @@ def fit(ctx, log_interval=5, no_val=False, logger=None):
             val_loss = .0
             vbar = tqdm(val_iter)
             for i, (data, target) in enumerate(vbar):
-                gpu_datas = split_and_load(data=data, ctx_list=ctx)
-                gpu_targets = split_and_load(data=target, ctx_list=ctx)
+                gpu_datas = split_and_load(data=data, ctx_list=ctx, even_split=False)
+                gpu_targets = split_and_load(data=target, ctx_list=ctx, even_split=False)
                 loss_temp = .0
                 for gpu_data, gpu_target in zip(gpu_datas, gpu_targets):
                     loss_gpu = criterion(*net(gpu_data), gpu_target)

@@ -1,0 +1,16 @@
+# example wandb sweep.yaml
+
+program: train.py
+method: bayes
+metric:
+  name: val_loss
+  goal: minimize
+parameters:
+  lr:
+    max: 1.e-2
+    min: 1.e-4
+    distribution: uniform
+  wd:
+    max: 1.e-3
+    min: 1.e-5
+    distribution: uniform

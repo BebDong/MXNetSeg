@@ -1,4 +1,4 @@
 # coding=utf-8
 
-from .layer import *
+from .layers import *
 from .losses import *

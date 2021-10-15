@@ -2,8 +2,8 @@
 
 from mxnet.gluon import nn
 from ..base import SegBaseResNet
-from mxnetseg.nn import FCNHead, PyramidPooling, ConvBlock, LateralFusion
-from mxnetseg.tools import MODELS
+from mxnetseg.nn import (FCNHead, PyramidPoolingModule, ConvModule2d, LateralFusion)
+from mxnetseg.utils import MODELS
 
 
 @MODELS.add_component
@@ -47,8 +47,8 @@ class _SwiftNetHead(nn.HybridBlock):
     def __init__(self, nclass, in_channels, capacity=256, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_SwiftNetHead, self).__init__()
         with self.name_scope():
-            self.ppool = PyramidPooling(in_channels, norm_layer, norm_kwargs)
-            self.conv_c4 = ConvBlock(capacity, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.ppool = PyramidPoolingModule(in_channels, norm_layer, norm_kwargs)
+            self.conv_c4 = ConvModule2d(capacity, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.fusion_c3 = LateralFusion(capacity, norm_layer, norm_kwargs)
             self.fusion_c2 = LateralFusion(capacity, norm_layer, norm_kwargs)
             self.fusion_c1 = LateralFusion(capacity, norm_layer, norm_kwargs)

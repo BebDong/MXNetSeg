@@ -16,14 +16,14 @@ from .mscoco import MSCOCO
 from .nyuv2 import NYUv2
 from .pcontext import PascalContext
 from .sbd import SBD
-from .sift import SiftFlow
+from .siftflow import SiftFlow
 from .stanford import StanfordBackground
 from .sunrgbd import SUNRGBD
 from .voc import PascalVOC
 from .vocaug import PascalVOCAug
 from .weizhorses import WeizmannHorses
 
-from mxnetseg.tools import DATASETS
+from mxnetseg.utils import DATASETS
 
 
 class DataFactory:

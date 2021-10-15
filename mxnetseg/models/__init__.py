@@ -1,9 +1,7 @@
 # coding=utf-8
 
 from mxnet import cpu
-
 from .base import *
-
 from .deeplab import *
 from .swiftnet import *
 from .acfnet import ACFNet
@@ -20,8 +18,7 @@ from .seenet import SeENet
 from .semanticfpn import SemanticFPN
 from .setr import SETR
 from .canet import *
-
-from mxnetseg.tools import validate_checkpoint, MODELS
+from mxnetseg.utils import validate_checkpoint, MODELS
 
 
 class ModelFactory:
@@ -30,7 +27,7 @@ class ModelFactory:
         self._class = MODELS[name]
 
     def get_model(self, model_kwargs, resume=None, lr_mult=1, backbone_init_manner='cls',
-                  backbone_ckpt=None, ctx=(cpu())):
+                  backbone_ckpt=None, prior_classes=None, ctx=(cpu())):
         net = self._class(**model_kwargs)
         if resume:
             checkpoint = validate_checkpoint(self._name, resume)
@@ -45,11 +42,28 @@ class ModelFactory:
             if net.aux:
                 net.aux_head.initialize()
                 net.aux_head.collect_params().setattr('lr_mult', lr_mult)
-            print("Pretrained backbone on ImageNet loaded & head random initialized.")
+            print("ImageNet pre-trained backbone loaded & head random initialized.")
         elif backbone_init_manner == 'seg':
+            model_kwargs['nclass'] = prior_classes
+            pretrain = self._class(**model_kwargs)
             checkpoint = validate_checkpoint(self._name, backbone_ckpt)
-            net.load_parameters(checkpoint, allow_missing=True, ignore_extra=True)
-            print(f"Pretrained checkpoint loaded: {checkpoint}")
+            pretrain.load_parameters(checkpoint)
+
+            # only support resnet for now
+            net.conv1 = pretrain.conv1
+            net.bn1 = pretrain.bn1
+            net.relu = pretrain.relu
+            net.maxpool = pretrain.maxpool
+            net.layer1 = pretrain.layer1
+            net.layer2 = pretrain.layer2
+            net.layer3 = pretrain.layer3
+            net.layer4 = pretrain.layer4
+
+            net.head.initialize()
+            if net.aux:
+                net.aux_head.initialize()
+
+            print("Pre-trained segmentation model loaded & head random initialized.")
         else:
             raise RuntimeError(f"Unknown backbone init manner: {backbone_init_manner}")
 

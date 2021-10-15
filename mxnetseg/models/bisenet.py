@@ -2,9 +2,9 @@
 
 from mxnet.gluon import nn
 from .base import SegBaseModel, SegBaseResNet
-from mxnetseg.tools import MODELS
+from mxnetseg.utils import MODELS
 from .backbone import xception39
-from mxnetseg.nn import FCNHead, ConvBlock, GlobalFlow, HybridConcurrentSep
+from mxnetseg.nn import (FCNHead, ConvModule2d, GlobalFlow, HybridConcurrentIsolate)
 
 __all__ = ['BiSeNetX', 'BiSeNetR']
 
@@ -26,7 +26,7 @@ class BiSeNetX(SegBaseModel):
 
             self.head = _BiSeNetHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             if self.aux:
-                self.aux_head = HybridConcurrentSep()
+                self.aux_head = HybridConcurrentIsolate()
                 self.aux_head.add(FCNHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs),
                                   FCNHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
 
@@ -62,7 +62,7 @@ class BiSeNetR(SegBaseResNet):
         with self.name_scope():
             self.head = _BiSeNetHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             if self.aux:
-                self.aux_head = HybridConcurrentSep()
+                self.aux_head = HybridConcurrentIsolate()
                 self.aux_head.add(FCNHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs),
                                   FCNHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
 
@@ -87,7 +87,7 @@ class _BiSeNetHead(nn.HybridBlock):
             self.global_flow = GlobalFlow(128, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.refine_c4 = _ARModule(128, norm_layer, norm_kwargs)
             self.refine_c3 = _ARModule(128, norm_layer, norm_kwargs)
-            self.proj = ConvBlock(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.proj = ConvModule2d(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.fusion = _FFModule(256, norm_layer, norm_kwargs, reduction=1)
             self.seg = FCNHead(nclass, 256, norm_layer, norm_kwargs, drop_out=.0)
 
@@ -110,13 +110,13 @@ class _SpatialPath(nn.HybridBlock):
     def __init__(self, channels, inter_channels=64, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_SpatialPath, self).__init__()
         with self.name_scope():
-            self.conv7x7 = ConvBlock(inter_channels, 7, 2, 3, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs)
-            self.conv3x3_1 = ConvBlock(inter_channels, 3, 2, 1, norm_layer=norm_layer,
-                                       norm_kwargs=norm_kwargs)
-            self.conv3x3_2 = ConvBlock(inter_channels, 3, 2, 1, norm_layer=norm_layer,
-                                       norm_kwargs=norm_kwargs)
-            self.conv1x1 = ConvBlock(channels, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv7x7 = ConvModule2d(inter_channels, 7, 2, 3, norm_layer=norm_layer,
+                                        norm_kwargs=norm_kwargs)
+            self.conv3x3_1 = ConvModule2d(inter_channels, 3, 2, 1, norm_layer=norm_layer,
+                                          norm_kwargs=norm_kwargs)
+            self.conv3x3_2 = ConvModule2d(inter_channels, 3, 2, 1, norm_layer=norm_layer,
+                                          norm_kwargs=norm_kwargs)
+            self.conv1x1 = ConvModule2d(channels, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.conv7x7(x)
@@ -130,10 +130,11 @@ class _ARModule(nn.HybridBlock):
     def __init__(self, channels, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_ARModule, self).__init__()
         with self.name_scope():
-            self.conv3x3 = ConvBlock(channels, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3x3 = ConvModule2d(channels, 3, 1, 1, norm_layer=norm_layer,
+                                        norm_kwargs=norm_kwargs)
             self.gvp = nn.GlobalAvgPool2D()
-            self.conv1x1 = ConvBlock(channels, 1, in_channels=channels, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs, activation='sigmoid')
+            self.conv1x1 = ConvModule2d(channels, 1, in_channels=channels, norm_layer=norm_layer,
+                                        norm_kwargs=norm_kwargs, activation='sigmoid')
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.conv3x3(x)
@@ -147,12 +148,12 @@ class _FFModule(nn.HybridBlock):
     def __init__(self, channels, norm_layer=nn.BatchNorm, norm_kwargs=None, reduction=1):
         super(_FFModule, self).__init__()
         with self.name_scope():
-            self.proj = ConvBlock(channels, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.proj = ConvModule2d(channels, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.gvp = nn.GlobalAvgPool2D()
-            self.conv1x1_1 = ConvBlock(channels // reduction, 1, norm_layer=norm_layer,
-                                       norm_kwargs=norm_kwargs)
-            self.conv1x1_2 = ConvBlock(channels, 1, norm_layer=norm_layer,
-                                       norm_kwargs=norm_kwargs, activation='sigmoid')
+            self.conv1x1_1 = ConvModule2d(channels // reduction, 1, norm_layer=norm_layer,
+                                          norm_kwargs=norm_kwargs)
+            self.conv1x1_2 = ConvModule2d(channels, 1, norm_layer=norm_layer,
+                                          norm_kwargs=norm_kwargs, activation='sigmoid')
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = F.concat(x, *args, dim=1)

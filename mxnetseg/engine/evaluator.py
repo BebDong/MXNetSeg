@@ -13,7 +13,7 @@ from gluoncv.model_zoo.segbase import MultiEvalModel
 
 from mxnetseg.data import DataFactory
 from mxnetseg.models import ModelFactory
-import mxnetseg.tools as my_tools
+import mxnetseg.utils as my_tools
 
 logger = get_logger(name='eval', level=20)
 
@@ -30,7 +30,7 @@ class EvalHelper:
         self.scales = self._scales()
 
     def _get_model(self):
-        norm_layer, norm_kwargs = my_tools.build_norm_layer('bn')
+        norm_layer, norm_kwargs = my_tools.get_norm_layer('bn')
         model_kwargs = {
             'nclass': self._data_factory.num_class,
             'backbone': self._args.backbone,
@@ -59,12 +59,12 @@ class EvalHelper:
 
     def _scales(self):
         if self._args.ms:
-            if 'city' in self._args.data.lower():
-                scales = (0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25)
-            elif self._args.data.lower() == 'gatech':
+            if self._args.data.lower() == 'gatech':
                 scales = (0.5, 0.8, 1.0, 1.2, 1.4)
+            elif 'camvid' in self._args.data.lower():
+                scales = (0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25)
             else:
-                scales = (0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0)
+                scales = (0.5, 0.75, 1.0, 1.25, 1.5, 1.75)
         else:
             scales = (1.0,)
         return scales

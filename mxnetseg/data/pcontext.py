@@ -10,10 +10,9 @@ import os
 import numpy as np
 import mxnet as mx
 from PIL import Image
-from detail import Detail
 from tqdm import trange
 from gluoncv.data.segbase import SegmentationDataset
-from mxnetseg.tools import DATASETS, dataset_dir
+from mxnetseg.utils import DATASETS, dataset_dir
 
 
 @DATASETS.add_component
@@ -25,7 +24,7 @@ class PascalContext(SegmentationDataset):
     """
     NUM_CLASS = 59
 
-    def __init__(self, root=None, split='train',mode=None, transform=None, **kwargs):
+    def __init__(self, root=None, split='train', mode=None, transform=None, **kwargs):
         root = root if root is not None else os.path.join(dataset_dir(), 'PContext')
         super(PascalContext, self).__init__(root, split, mode, transform, **kwargs)
         self._img_dir = os.path.join(root, 'JPEGImages')
@@ -58,6 +57,7 @@ class PascalContext(SegmentationDataset):
 
     def _get_imgs(self, split='trainval'):
         """ get images by split type using Detail API. """
+        from detail import Detail
         annotation = os.path.join(self.root, 'trainval_merged.json')
         detail = Detail(annotation, self._img_dir, split)
         imgs = detail.getImgs()

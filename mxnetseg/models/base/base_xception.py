@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from .segbase import SegBaseModel, ABC
-from mxnetseg.tools import data_dir
+from mxnetseg.utils import data_dir
 from gluoncv.model_zoo import get_xcetption
 
 __all__ = ['SegBaseXception']

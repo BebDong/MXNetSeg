@@ -2,8 +2,8 @@
 
 from mxnet.gluon import nn
 from ..base import SegBaseXception, SegBaseResNet
-from mxnetseg.nn import FCNHead, ASPP, ConvBlock
-from mxnetseg.tools import MODELS
+from mxnetseg.nn import FCNHead, ASPPModule, ConvModule2d
+from mxnetseg.utils import MODELS
 
 
 @MODELS.add_component
@@ -62,10 +62,10 @@ class _DeepLabHead(nn.HybridBlock):
     def __init__(self, nclass, in_channels, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_DeepLabHead, self).__init__()
         with self.name_scope():
-            self.aspp = ASPP(256, in_channels, norm_layer, norm_kwargs, rates=(12, 24, 36))
-            self.conv_c1 = ConvBlock(48, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv3x3 = ConvBlock(256, 3, 1, 1, in_channels=304, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs)
+            self.aspp = ASPPModule(256, in_channels, norm_layer, norm_kwargs, rates=(12, 24, 36))
+            self.conv_c1 = ConvModule2d(48, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3x3 = ConvModule2d(256, 3, 1, 1, in_channels=304, norm_layer=norm_layer,
+                                        norm_kwargs=norm_kwargs)
             self.drop = nn.Dropout(0.5)
             self.head = FCNHead(nclass, 256, norm_layer, norm_kwargs)
 

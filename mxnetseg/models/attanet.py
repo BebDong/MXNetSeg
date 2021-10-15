@@ -2,8 +2,8 @@
 
 from .base import SegBaseResNet
 from mxnet.gluon import nn
-from mxnetseg.nn import ConvBlock, FCNHead
-from mxnetseg.tools import MODELS
+from mxnetseg.nn import ConvModule2d, FCNHead
+from mxnetseg.utils import MODELS
 
 
 @MODELS.add_component
@@ -45,7 +45,7 @@ class _AttaNetHead(nn.HybridBlock):
         super(_AttaNetHead, self).__init__()
         with self.name_scope():
             self.afm = _AttentionFusionModule(128, norm_layer, norm_kwargs)
-            self.conv3x3 = ConvBlock(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3x3 = ConvModule2d(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.sam = _StripAttentionModule(128, norm_layer, norm_kwargs)
             self.seg = FCNHead(nclass, 128, norm_layer, norm_kwargs)
 
@@ -62,13 +62,13 @@ class _AttentionFusionModule(nn.HybridBlock):
     def __init__(self, channels=128, norm_layer=None, norm_kwargs=None):
         super(_AttentionFusionModule, self).__init__()
         with self.name_scope():
-            self.conv3x3_high = ConvBlock(channels, 3, 1, 1, norm_layer=norm_layer,
-                                          norm_kwargs=norm_kwargs)
-            self.conv3x3_low = ConvBlock(channels, 3, 1, 1, norm_layer=norm_layer,
-                                         norm_kwargs=norm_kwargs)
-            self.conv1x1_1 = ConvBlock(channels, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv1x1_2 = ConvBlock(channels, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                       activation='sigmoid')
+            self.conv3x3_high = ConvModule2d(channels, 3, 1, 1, norm_layer=norm_layer,
+                                             norm_kwargs=norm_kwargs)
+            self.conv3x3_low = ConvModule2d(channels, 3, 1, 1, norm_layer=norm_layer,
+                                            norm_kwargs=norm_kwargs)
+            self.conv1x1_1 = ConvModule2d(channels, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv1x1_2 = ConvModule2d(channels, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                          activation='sigmoid')
             self.gap = nn.GlobalAvgPool2D()
 
     def hybrid_forward(self, F, x, *args, **kwargs):
@@ -91,12 +91,12 @@ class _StripAttentionModule(nn.HybridBlock):
     def __init__(self, in_channels, norm_layer=None, norm_kwargs=None, reduction=2):
         super(_StripAttentionModule, self).__init__()
         with self.name_scope():
-            self.query_conv = ConvBlock(in_channels // reduction, 1, in_channels=in_channels,
-                                        norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.key_conv = ConvBlock(in_channels // reduction, 1, in_channels=in_channels,
-                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.value_conv = ConvBlock(in_channels, 1, in_channels=in_channels,
-                                        norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.query_conv = ConvModule2d(in_channels // reduction, 1, in_channels=in_channels,
+                                           norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.key_conv = ConvModule2d(in_channels // reduction, 1, in_channels=in_channels,
+                                         norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.value_conv = ConvModule2d(in_channels, 1, in_channels=in_channels,
+                                           norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         query = F.reshape(self.query_conv(x), shape=(0, 0, -1))  # NC(HW)

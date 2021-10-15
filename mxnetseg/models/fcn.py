@@ -3,7 +3,7 @@
 from mxnet.gluon import nn
 from mxnetseg.nn import FCNHead
 from .base import SegBaseResNet, SegBaseMobileNet
-from mxnetseg.tools import MODELS
+from mxnetseg.utils import MODELS
 
 
 @MODELS.add_component

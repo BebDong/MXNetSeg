@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 from PIL import ImageFile
 from gluoncv.data.segbase import SegmentationDataset
-from mxnetseg.tools import DATASETS, dataset_dir
+from mxnetseg.utils import DATASETS, dataset_dir
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 

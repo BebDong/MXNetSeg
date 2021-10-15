@@ -2,8 +2,8 @@
 
 from mxnet.gluon import nn
 from ..base import SegBaseResNet
-from mxnetseg.tools import MODELS
-from mxnetseg.nn import FCNHead, ConvBlock, GlobalFlow, DepthSepConvolution
+from mxnetseg.utils import MODELS
+from mxnetseg.nn import FCNHead, ConvModule2d, GlobalFlow, DepthwiseSeparableConv2d
 
 
 @MODELS.add_component
@@ -53,7 +53,7 @@ class CANetv1(SegBaseResNet):
 
 
 class _CAHead(nn.HybridBlock):
-    def __init__(self, nclass, capacity=512, attention=False, drop=.5, norm_layer=nn.BatchNorm,
+    def __init__(self, nclass, capacity=512, attention=False, drop=.1, norm_layer=nn.BatchNorm,
                  norm_kwargs=None, height=120, width=120):
         super(_CAHead, self).__init__()
         self.up_kwargs = {'height': height, 'width': width}
@@ -76,12 +76,12 @@ class _CAHead(nn.HybridBlock):
                 self.selection = _FeatureSelection(256, in_channels=capacity, norm_layer=norm_layer,
                                                    norm_kwargs=norm_kwargs)
             else:
-                self.proj = ConvBlock(256, 3, 1, 1, in_channels=capacity, norm_layer=norm_layer,
-                                      norm_kwargs=norm_kwargs)
+                self.proj = ConvModule2d(256, 3, 1, 1, in_channels=capacity, norm_layer=norm_layer,
+                                         norm_kwargs=norm_kwargs)
             self.drop = nn.Dropout(drop) if drop else None
             # decoder
-            self.decoder = ConvBlock(48, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv3x3 = ConvBlock(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.decoder = ConvModule2d(48, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3x3 = ConvModule2d(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             # segmentation head
             self.seg_head = FCNHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
@@ -123,10 +123,10 @@ class _ContextFlow(nn.HybridBlock):
         self.stride = stride
         self.up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
-            self.conv1 = DepthSepConvolution(channels, 2048 + channels, 3, 1, 1, norm_layer=norm_layer,
-                                             norm_kwargs=norm_kwargs)
-            self.conv2 = DepthSepConvolution(channels, channels, 3, 1, 1, norm_layer=norm_layer,
-                                             norm_kwargs=norm_kwargs)
+            self.conv1 = DepthwiseSeparableConv2d(channels, 2048 + channels, 3, 1, 1,
+                                                  norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv2 = DepthwiseSeparableConv2d(channels, channels, 3, 1, 1, norm_layer=norm_layer,
+                                                  norm_kwargs=norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         upper_input = args[0]
@@ -150,11 +150,11 @@ class _FeatureSelection(nn.HybridBlock):
     def __init__(self, channels, in_channels, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_FeatureSelection, self).__init__()
         with self.name_scope():
-            self.conv3x3 = ConvBlock(channels, 3, 1, 1, in_channels=in_channels,
-                                     norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3x3 = ConvModule2d(channels, 3, 1, 1, in_channels=in_channels,
+                                        norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.gap = nn.GlobalAvgPool2D()
-            self.conv1x1 = ConvBlock(channels, 1, in_channels=channels, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs, activation='sigmoid')
+            self.conv1x1 = ConvModule2d(channels, 1, in_channels=channels, norm_layer=norm_layer,
+                                        norm_kwargs=norm_kwargs, activation='sigmoid')
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.conv3x3(x)
@@ -176,10 +176,10 @@ class _ContextFlowShuffle(nn.HybridBlock):
         self.groups = groups
         self.up_kwargs = {'height': height, 'width': width}
         with self.name_scope():
-            self.conv1 = ConvBlock(channels, 3, 1, 1, groups=groups, norm_layer=norm_layer,
-                                   norm_kwargs=norm_kwargs, activation='relu')
-            self.conv2 = ConvBlock(channels, 3, 1, 1, groups=groups, norm_layer=norm_layer,
-                                   norm_kwargs=norm_kwargs, activation='relu')
+            self.conv1 = ConvModule2d(channels, 3, 1, 1, groups=groups, norm_layer=norm_layer,
+                                      norm_kwargs=norm_kwargs, activation='relu')
+            self.conv2 = ConvModule2d(channels, 3, 1, 1, groups=groups, norm_layer=norm_layer,
+                                      norm_kwargs=norm_kwargs, activation='relu')
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         upper_input = args[0]

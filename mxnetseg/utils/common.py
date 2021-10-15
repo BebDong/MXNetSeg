@@ -12,7 +12,7 @@ from mxnet.gluon.contrib.nn.basic_layers import SyncBatchNorm
 
 from gluoncv.nn import GroupNorm
 
-__all__ = ['cudnn_auto_tune', 'get_contexts', 'get_strftime', 'build_norm_layer',
+__all__ = ['cudnn_auto_tune', 'get_contexts', 'get_strftime', 'get_norm_layer',
            'list_to_str', 'misclassified_pixels', 'misclassified_prop']
 
 
@@ -47,7 +47,7 @@ def get_contexts(ctx_id):
     return ctx_list
 
 
-def build_norm_layer(bn: str, num_ctx=1):
+def get_norm_layer(bn: str, num_ctx=1):
     """get corresponding norm layer"""
     if bn == 'bn':
         norm_layer = BatchNorm

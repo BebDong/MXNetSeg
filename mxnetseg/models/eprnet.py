@@ -3,7 +3,7 @@
 from mxnet.gluon import nn
 from .base import SegBaseModel
 from .backbone import eprnet_cls, eprnet_cls_light
-from mxnetseg.tools import MODELS
+from mxnetseg.utils import MODELS
 from mxnetseg.nn import FCNHead
 
 

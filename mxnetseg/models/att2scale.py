@@ -2,8 +2,8 @@
 
 from mxnet.gluon import nn
 from .base import SegBaseResNet
-from mxnetseg.tools import MODELS
-from mxnetseg.nn import FCNHead, AuxHead, ConvBlock, HybridConcurrentSep
+from mxnetseg.utils import MODELS
+from mxnetseg.nn import (FCNHead, AuxHead, ConvModule2d, HybridConcurrentIsolate)
 
 
 @MODELS.add_component
@@ -25,7 +25,7 @@ class AttentionToScale(SegBaseResNet):
         with self.name_scope():
             self.head = _AttentionHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             if self.aux:
-                self.aux_head = HybridConcurrentSep()
+                self.aux_head = HybridConcurrentIsolate()
                 self.aux_head.add(
                     AuxHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs),
                     AuxHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
@@ -63,7 +63,7 @@ class _AttentionHead(nn.HybridBlock):
         self.sigmoid = use_sigmoid
         with self.name_scope():
             self.seg_head = FCNHead(nclass, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv3x3 = ConvBlock(512, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3x3 = ConvModule2d(512, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             if use_sigmoid:
                 self.conv1x1 = nn.Conv2D(1, 1, in_channels=512)
             else:

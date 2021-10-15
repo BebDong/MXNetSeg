@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from .segbase import SegBaseModel, ABC
-from mxnetseg.tools import data_dir
+from mxnetseg.utils import data_dir
 from gluoncv.model_zoo import mobilenet_v2_0_25, mobilenet_v2_0_5, mobilenet_v2_0_75, mobilenet_v2_1_0
 
 __all__ = ['SegBaseMobileNet']

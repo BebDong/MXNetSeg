@@ -13,21 +13,34 @@ from mxnetseg.engine import EvalHelper
 
 
 def parse_args():
+    """
+    Models:
+        'DeepLabv3', 'DeepLabv3PlusX', 'DeepLabv3PlusR', 'SwiftResNet', 'SwiftResNetPr',
+        'ACFNet', 'AlignSeg', 'AttentionToScale', 'AttaNet', 'BiSeNetX', 'BiSeNetR', 'DANet',
+        'DenseASPP', 'FaPN', 'FCNResNet', 'FCNMobileNet', 'LadderDenseNet', 'PSPNet', 'SeENet',
+        'SemanticFPN', 'SETR',
+        'EPRNet', 'CANetv1', 'CANetv2'
+    Datasets:
+        'MSCOCO','ADE20K', 'Aeroscapes', 'BDD100K', 'CamVid', 'CityCoarse', 'Cityscapes', 'COCOStuff',
+        'GATECH', 'Mapillary', 'MHPV1', 'NYUv2', 'PascalContext', 'SBD', 'SiftFlow',
+        'StanfordBackground', 'SUNRGBD', 'PascalVOC', 'PascalVOCAug', 'WeizmannHorses'
+
+    """
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--purpose', type=str, default='score',
                         help='score/speed')
 
-    parser.add_argument('--model', type=str, default='CANetv2',
+    parser.add_argument('--model', type=str, default='PSPNet',
                         help='model name')
-    parser.add_argument('--backbone', type=str, default='resnet101',
+    parser.add_argument('--backbone', type=str, default='resnet50',
                         help='backbone network')
     parser.add_argument('--dilate', action='store_true', default=True,
                         help='dilated backbone')
-    parser.add_argument('--aux', action='store_true', default=False,
+    parser.add_argument('--aux', action='store_true', default=True,
                         help='auxiliary segmentation head')
     parser.add_argument('--checkpoint', type=str,
-                        default='net.params',
+                        default='pspnet_resnet50_cityscapes_20211013_203221.params',
                         help='checkpoint')
 
     parser.add_argument('--ctx', type=int, nargs='+', default=(0,),
@@ -35,7 +48,7 @@ def parse_args():
 
     parser.add_argument('--data', type=str, default='Cityscapes',
                         help='dataset name')
-    parser.add_argument('--crop', type=int, default=480,
+    parser.add_argument('--crop', type=int, default=768,
                         help='crop size')
     parser.add_argument('--base', type=int, default=2048,
                         help='random scale base size')
@@ -60,7 +73,7 @@ def main():
         helper.speed(data_size=(480, 480),
                      iterations=1000,
                      warm_up=500,
-                     hybridize=False)
+                     hybridize=True)
 
 
 if __name__ == '__main__':

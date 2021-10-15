@@ -8,7 +8,7 @@ from PIL import Image
 import numpy as np
 from gluoncv.data.segbase import SegmentationDataset
 from gluoncv.data.mscoco.utils import try_import_pycocotools
-from mxnetseg.tools import DATASETS, dataset_dir
+from mxnetseg.utils import DATASETS, dataset_dir
 
 
 @DATASETS.add_component

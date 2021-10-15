@@ -2,8 +2,8 @@
 
 from mxnet.gluon import nn
 from .base import SegBaseResNet
-from mxnetseg.nn import ASPP, FCNHead, ConvBlock
-from mxnetseg.tools import MODELS
+from mxnetseg.nn import ASPPModule, FCNHead, ConvModule2d
+from mxnetseg.utils import MODELS
 
 
 @MODELS.add_component
@@ -46,8 +46,8 @@ class _ACFHead(nn.HybridBlock):
     def __init__(self, nclass, in_channels, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_ACFHead, self).__init__()
         with self.name_scope():
-            self.aspp = ASPP(512, in_channels, norm_layer, norm_kwargs,
-                             rates=(12, 24, 36), pool_branch=False)
+            self.aspp = ASPPModule(512, in_channels, norm_layer, norm_kwargs,
+                                   rates=(12, 24, 36), pool_branch=False)
             self.coarse_head = FCNHead(nclass, 512, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.acf = _ACFModule(512, 512, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.head = FCNHead(nclass, 1024, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
@@ -65,10 +65,10 @@ class _ACFModule(nn.HybridBlock):
     def __init__(self, channels, in_channels, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_ACFModule, self).__init__()
         with self.name_scope():
-            self.conv_1 = ConvBlock(channels, 1, in_channels=in_channels,
-                                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv_2 = ConvBlock(channels, 1, in_channels=in_channels,
-                                    norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv_1 = ConvModule2d(channels, 1, in_channels=in_channels, norm_layer=norm_layer,
+                                       norm_kwargs=norm_kwargs)
+            self.conv_2 = ConvModule2d(channels, 1, in_channels=in_channels, norm_layer=norm_layer,
+                                       norm_kwargs=norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.conv_1(x)

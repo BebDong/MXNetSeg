@@ -1,11 +1,9 @@
 # not ready
-mxnetseg/models/canet/v2.py
+mxnetseg/models/canet/canetv2.py
 
-# ignore
-mxnetseg/contrib/
+# testing codes: ignore
 mxnetseg/flash/
 mxnetseg/scripts/
-mxnetseg/wandb/
 mxnetseg/try.py
 
 # Mac OS

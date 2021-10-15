@@ -2,8 +2,8 @@
 
 from mxnet.gluon import nn
 from .base import SegBaseResNet
-from mxnetseg.nn import ConvBlock, SeEModule, FCNHead
-from mxnetseg.tools import MODELS
+from mxnetseg.nn import ConvModule2d, SeEModule, FCNHead
+from mxnetseg.utils import MODELS
 
 
 @MODELS.add_component
@@ -68,14 +68,15 @@ class _BoundaryAttention(nn.HybridBlock):
                  norm_layer=nn.BatchNorm, norm_kwargs=None, drop=.1):
         super(_BoundaryAttention, self).__init__()
         with self.name_scope():
-            self.conv1x1 = ConvBlock(low_channels, 1, in_channels=high_channels, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs, activation='sigmoid')
-            self.fconv1x1 = ConvBlock(high_channels, 1, in_channels=low_channels,
-                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.fconv3x3 = ConvBlock(high_channels, 3, 1, 1, in_channels=high_channels,
-                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.cconv3x3 = ConvBlock(high_channels, 3, 1, 1, in_channels=high_channels,
-                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv1x1 = ConvModule2d(low_channels, 1, in_channels=high_channels,
+                                        norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                        activation='sigmoid')
+            self.fconv1x1 = ConvModule2d(high_channels, 1, in_channels=low_channels,
+                                         norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.fconv3x3 = ConvModule2d(high_channels, 3, 1, 1, in_channels=high_channels,
+                                         norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.cconv3x3 = ConvModule2d(high_channels, 3, 1, 1, in_channels=high_channels,
+                                         norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.drop = nn.Dropout(drop) if drop else None
             self.cconv1x1 = nn.Conv2D(nclass, 1, in_channels=high_channels)
 

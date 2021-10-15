@@ -6,7 +6,7 @@ from PIL import Image
 import numpy as np
 import mxnet as mx
 from gluoncv.data.segbase import SegmentationDataset
-from mxnetseg.tools import DATASETS, dataset_dir
+from mxnetseg.utils import DATASETS, dataset_dir
 
 
 @DATASETS.add_component

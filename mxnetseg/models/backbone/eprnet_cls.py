@@ -2,8 +2,8 @@
 
 from mxnet.gluon import nn
 from mxnet.gluon.contrib.nn import HybridConcurrent
-from mxnetseg.nn import Activation, ConvBlock, HybridConcurrentSum
-from mxnetseg.tools import validate_checkpoint
+from mxnetseg.nn import Activation, ConvModule2d, HybridConcurrentSum
+from mxnetseg.utils import validate_checkpoint
 
 __all__ = ['EPRNetCls', 'get_eprnet_cls', 'eprnet_cls', 'eprnet_cls_light']
 
@@ -84,9 +84,9 @@ class _EPRModule(nn.HybridBlock):
         with self.name_scope():
             self.pyramid = _MPUnit(channels, atrous_rates, in_channels, norm_layer,
                                    norm_kwargs, activation=activation, light=light)
-            self.compact = ConvBlock(channels, 3, stride, 1, in_channels=channels,
-                                     norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                     activation=None)
+            self.compact = ConvModule2d(channels, 3, stride, 1, in_channels=channels,
+                                        norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                        activation=None)
 
             if (channels != in_channels) or down_sample:
                 self.skip = nn.Conv2D(channels, kernel_size=1, strides=stride,
@@ -113,19 +113,19 @@ class _MPUnit(nn.HybridBlock):
                  norm_kwargs=None, activation='prelu', light=False, **kwargs):
         super(_MPUnit, self).__init__()
         with self.name_scope():
-            self.concurrent = HybridConcurrent(axis=1) if not light else HybridConcurrentSum(axis=1)
+            self.concurrent = HybridConcurrent(axis=1) if not light else HybridConcurrentSum()
             for i in range(len(atrous_rates)):
                 rate = atrous_rates[i]
-                self.concurrent.add(ConvBlock(channels, 3, 1, padding=rate, dilation=rate,
-                                              groups=in_channels, in_channels=in_channels,
-                                              norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                              activation=activation))
+                self.concurrent.add(ConvModule2d(channels, 3, 1, padding=rate, dilation=rate,
+                                                 groups=in_channels, in_channels=in_channels,
+                                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                                 activation=activation))
             if not light:
-                self.concurrent.add(ConvBlock(channels, 1, in_channels=in_channels,
-                                              norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                              activation=activation))
-                self.conv1x1 = ConvBlock(channels, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                         activation=activation)
+                self.concurrent.add(ConvModule2d(channels, 1, in_channels=in_channels,
+                                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                                 activation=activation))
+                self.conv1x1 = ConvModule2d(channels, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                            activation=activation)
             else:
                 self.conv1x1 = None
 

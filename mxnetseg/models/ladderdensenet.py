@@ -2,8 +2,8 @@
 
 from mxnet.gluon import nn
 from .base import SegBaseDenseNet
-from mxnetseg.nn import FCNHead, ConvBlock, LateralFusion
-from mxnetseg.tools import MODELS
+from mxnetseg.nn import FCNHead, ConvModule2d, LateralFusion
+from mxnetseg.utils import MODELS
 
 
 @MODELS.add_component
@@ -49,8 +49,8 @@ class _LadderHead(nn.HybridBlock):
     def __init__(self, nclass, decoder_capacity, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_LadderHead, self).__init__()
         with self.name_scope():
-            self.conv_c4 = ConvBlock(decoder_capacity, 1, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs)
+            self.conv_c4 = ConvModule2d(decoder_capacity, 1, norm_layer=norm_layer,
+                                        norm_kwargs=norm_kwargs)
             self.fusion_c3 = LateralFusion(decoder_capacity, norm_layer, norm_kwargs)
             self.fusion_c2 = LateralFusion(decoder_capacity, norm_layer, norm_kwargs)
             self.fusion_c1 = LateralFusion(decoder_capacity, norm_layer, norm_kwargs)

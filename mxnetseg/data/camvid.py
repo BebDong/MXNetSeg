@@ -5,7 +5,7 @@ import numpy as np
 import mxnet as mx
 from PIL import Image
 from gluoncv.data.segbase import SegmentationDataset
-from mxnetseg.tools import DATASETS, dataset_dir
+from mxnetseg.utils import DATASETS, dataset_dir
 
 
 @DATASETS.add_component
@@ -18,7 +18,7 @@ class CamVid(SegmentationDataset):
     NUM_CLASS = 11
 
     def __init__(self, root=None, split='train', mode=None, transform=None,
-                 full_resolution=False, **kwargs):
+                 full_resolution=True, **kwargs):
         base_dir = 'CamVidFull' if full_resolution else 'CamVid'
         root = root if root is not None else os.path.join(dataset_dir(), base_dir)
         super(CamVid, self).__init__(root, split, mode, transform, **kwargs)
@@ -26,8 +26,10 @@ class CamVid(SegmentationDataset):
         _mask_dir = os.path.join(root, 'labels')
         if split == 'train':
             _split_f = os.path.join(root, 'trainval.txt')
+            print(f'Training list: {_split_f}')
         elif split == 'val':
             _split_f = os.path.join(root, 'test.txt')
+            print(f'Validation list: {_split_f}')
         elif split == 'test':
             _split_f = os.path.join(root, 'test.txt')
         else:
@@ -81,4 +83,4 @@ class CamVid(SegmentationDataset):
     @property
     def classes(self):
         return ('sky', 'building', 'column_pole', 'road', 'sidewalk', 'tree',
-                'sign', 'fence', 'car', 'pedestrian', 'byciclist', 'void')
+                'sign', 'fence', 'car', 'pedestrian', 'byciclist')

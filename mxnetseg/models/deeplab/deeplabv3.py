@@ -2,8 +2,8 @@
 
 from mxnet.gluon import nn
 from ..base import SegBaseResNet
-from mxnetseg.nn import FCNHead, ASPP
-from mxnetseg.tools import MODELS
+from mxnetseg.nn import FCNHead, ASPPModule
+from mxnetseg.utils import MODELS
 
 
 @MODELS.add_component
@@ -45,7 +45,7 @@ class _DeepLabHead(nn.HybridBlock):
     def __init__(self, nclass, in_channels, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_DeepLabHead, self).__init__()
         with self.name_scope():
-            self.aspp = ASPP(256, in_channels, norm_layer, norm_kwargs, rates=(12, 24, 36))
+            self.aspp = ASPPModule(256, in_channels, norm_layer, norm_kwargs, rates=(6, 12, 18))
             self.head = FCNHead(nclass, 256, norm_layer, norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):

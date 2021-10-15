@@ -22,4 +22,3 @@ tensorboard-plugin-wit==1.8.0
 tensorboardX==2.1
 tqdm==4.56.0
 wandb==0.10.31
-

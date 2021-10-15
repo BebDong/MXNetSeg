@@ -1,6 +1,5 @@
 # coding=utf-8
 
-
 from mxnet.gluon import nn
 from gluoncv.nn import ReLU6, HardSigmoid, HardSwish
 
@@ -10,8 +9,9 @@ __all__ = ['Mish', 'Activation']
 class Mish(nn.HybridBlock):
     """
     Mish activation function.
-    Reference: Misra D. Mish: A Self Regularized Non-Monotonic
-        Neural Activation Function. arXiv preprint arXiv:1908.08681, 2019.
+    Reference:
+        Misra D. Mish: A Self Regularized Non-Monotonic Neural Activation Function.
+        arXiv preprint arXiv:1908.08681, 2019.
     """
 
     def __init__(self):

@@ -2,8 +2,8 @@
 
 from mxnet.gluon import nn
 from .base import SegBaseResNet
-from mxnetseg.nn import FCNHead, DenseASPPBlock
-from mxnetseg.tools import MODELS
+from mxnetseg.nn import FCNHead, DenseASPPModule
+from mxnetseg.utils import MODELS
 
 
 @MODELS.add_component
@@ -45,7 +45,7 @@ class _DenseASPPHead(nn.HybridBlock):
     def __init__(self, nclass, in_channels, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_DenseASPPHead, self).__init__()
         with self.name_scope():
-            self.dense_aspp = DenseASPPBlock(256, in_channels, norm_layer, norm_kwargs)
+            self.dense_aspp = DenseASPPModule(256, in_channels, norm_layer, norm_kwargs)
             self.head = FCNHead(nclass, 256, norm_layer, norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):

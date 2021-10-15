@@ -1,3 +1,3 @@
 # coding=utf-8
 
-from .v1 import CANetv1
+from .canetv1 import CANetv1

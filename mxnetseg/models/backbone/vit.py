@@ -4,7 +4,7 @@
 from mxnet import init
 from mxnet.gluon import nn
 from mxnetseg.nn import Activation
-from mxnetseg.tools import validate_checkpoint
+from mxnetseg.utils import validate_checkpoint
 
 __all__ = ['VisionTransformer', 'get_vit', 'vit_base_16', 'vit_large_16', 'vit_huge_16']
 

@@ -2,8 +2,8 @@
 
 from mxnet.gluon import nn
 from ..base import SegBaseResNet
-from mxnetseg.nn import FCNHead, AuxHead, ConvBlock
-from mxnetseg.tools import MODELS
+from mxnetseg.nn import FCNHead, AuxHead, ConvModule2d
+from mxnetseg.utils import MODELS
 
 
 @MODELS.add_component
@@ -50,7 +50,7 @@ class _SwiftNetHead(nn.HybridBlock):
     def __init__(self, nclass, capacity=128, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_SwiftNetHead, self).__init__()
         with self.name_scope():
-            self.conv1x1 = ConvBlock(capacity, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv1x1 = ConvModule2d(capacity, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.fusion_32x = _LateralFusion(capacity, norm_layer, norm_kwargs)
             self.fusion_16x = _LateralFusion(capacity, norm_layer, norm_kwargs)
             self.fusion_8x = _LateralFusion(capacity, norm_layer, norm_kwargs)
@@ -77,10 +77,9 @@ class _LateralFusion(nn.HybridBlock):
         super(_LateralFusion, self).__init__()
         self.is_final = is_final
         with self.name_scope():
-            self.conv1x1 = ConvBlock(capacity, 1, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs)
-            self.conv3x3 = ConvBlock(capacity, 3, 1, 1, norm_layer=norm_layer,
-                                     norm_kwargs=norm_kwargs)
+            self.conv1x1 = ConvModule2d(capacity, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3x3 = ConvModule2d(capacity, 3, 1, 1, norm_layer=norm_layer,
+                                        norm_kwargs=norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         low = args[0] if self.is_final else F.concat(args[0], args[1], dim=1)

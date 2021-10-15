@@ -2,7 +2,7 @@
 # Adapted from: https://github.com/dmlc/gluon-cv/blob/master/gluoncv/model_zoo/segbase.py
 
 from .segbase import SegBaseModel, ABC
-from mxnetseg.tools import data_dir
+from mxnetseg.utils import data_dir
 from gluoncv.model_zoo import resnet18_v1b, resnet34_v1b, resnet50_v1s, resnet101_v1s, resnet152_v1s
 from gluoncv.model_zoo.resnest import resnest14, resnest26, resnest50, resnest101, resnest200, resnest269
 

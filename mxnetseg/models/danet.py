@@ -3,8 +3,8 @@
 from mxnet import init
 from mxnet.gluon import nn
 from .base import SegBaseResNet
-from mxnetseg.tools import MODELS
-from mxnetseg.nn import SelfAttention, ConvBlock, HybridConcurrentSep
+from mxnetseg.utils import MODELS
+from mxnetseg.nn import (SelfAttentionModule, ConvModule2d, HybridConcurrentIsolate)
 
 
 @MODELS.add_component
@@ -33,7 +33,7 @@ class DANet(SegBaseResNet):
                 cam_layer.add(nn.Dropout(0.1))
                 cam_layer.add(nn.Conv2D(nclass, 1))
 
-                self.aux_head = HybridConcurrentSep()
+                self.aux_head = HybridConcurrentIsolate()
                 self.aux_head.add(pam_layer, cam_layer)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
@@ -55,17 +55,17 @@ class _DANetHead(nn.HybridBlock):
         super(_DANetHead, self).__init__()
         inter_channels = in_channels // 4
         with self.name_scope():
-            self.compress_pam = ConvBlock(inter_channels, 3, 1, 1, in_channels=in_channels,
-                                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.pam = SelfAttention(inter_channels)
-            self.proj_pam = ConvBlock(inter_channels, 3, 1, 1, in_channels=inter_channels,
-                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.compress_pam = ConvModule2d(inter_channels, 3, 1, 1, in_channels=in_channels,
+                                             norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.pam = SelfAttentionModule(inter_channels)
+            self.proj_pam = ConvModule2d(inter_channels, 3, 1, 1, in_channels=inter_channels,
+                                         norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
-            self.compress_cam = ConvBlock(inter_channels, 3, 1, 1, in_channels=in_channels,
-                                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.compress_cam = ConvModule2d(inter_channels, 3, 1, 1, in_channels=in_channels,
+                                             norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.cam = _CAModule(inter_channels)
-            self.proj_cam = ConvBlock(inter_channels, 3, 1, 1, in_channels=inter_channels,
-                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.proj_cam = ConvModule2d(inter_channels, 3, 1, 1, in_channels=inter_channels,
+                                         norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
             self.head = nn.HybridSequential()
             self.head.add(nn.Dropout(0.1))
@@ -105,7 +105,7 @@ class _CAModule(nn.HybridBlock):
         energy_new = F.max(energy, -1, True).broadcast_like(energy) - energy
         attention = F.softmax(energy_new)
         value = F.reshape(x, shape=(0, 0, -1))  # NC(HW)
-        out = F.batch_dot(attention, value)  # # NC(HW)
+        out = F.batch_dot(attention, value)  # NC(HW)
         out = F.reshape_like(out, x, lhs_begin=2, lhs_end=None, rhs_begin=2, rhs_end=None)
         out = F.broadcast_mul(gamma, out) + x
         return out

@@ -6,7 +6,6 @@ For well-prepared images of benchmark datasets.
 
 ```
 MXNetSeg
-|-- configs
 |-- dataset
 |   |-- ADE20K
 |   |   |-- ADEChallengeData2016
@@ -72,12 +71,22 @@ MXNetSeg
 |   |   |-- annotations
 |   |   |-- train 2017
 |   |   `-- val2017
+|   |-- COCOStuff
+|   |   |-- annotations
+|   |   |-- imageLists
+|   |   `-- images
 |   |-- GATECH
 |   |   |-- images
 |   |   |-- labels
 |   |   |-- test.txt
 |   |   |-- test_all.txt
 |   |   `-- train.txt
+|   |-- ImageNet
+|   |   `--rec
+|   |      |-- train.idx
+|   |      |-- train.rec
+|   |      |-- val.idx
+|   |      `-- val.rec
 |   |-- KITTI
 |   |   |-- Ros
 |   |   |   |-- Training_00
@@ -176,12 +185,10 @@ MXNetSeg
 |   |-- demo_citys.png
 |   `-- repo-social-image.png
 |-- mxnetseg
-|-- scripts
-|-- weights
-`-- wandb
+`-- scripts
 
 ```
 
 ## Remarks
 
-Some benchmark datasets are not ready to use directly, and necessary transformation is needed. For example, this repo's habit is to convert both `.txt` and `.mat` annotations into grayscale images. Folder or file names can be self-defined as long as they are consistent with data loading codes in the [data package](../mxnetseg/data).
+Some benchmark datasets are not ready to use directly, and necessary transformation is needed. For example, this repo's habit is to convert both `.txt` and `.mat` annotations into grayscale images. Folder or file names can be self-defined as long as they are consistent with data loading codes in the [data-package](../mxnetseg/data).

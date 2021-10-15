@@ -10,7 +10,7 @@ from mxnet.gluon.data import DataLoader
 from gluoncv.utils import LRScheduler, split_and_load
 from gluoncv.utils.metrics import SegmentationMetric
 
-import mxnetseg.tools as my_tools
+import mxnetseg.utils as my_tools
 from mxnetseg.data import DataFactory
 from mxnetseg.models import ModelFactory
 
@@ -68,7 +68,7 @@ def train(cfg, ctx_lst, project_name, log_interval=5, no_val=False, lr=None, wd=
     data_factory = DataFactory(wandb.config.data_name)
     model_factory = ModelFactory(wandb.config.model_name)
 
-    norm_layer, norm_kwargs = my_tools.build_norm_layer(wandb.config.norm, len(ctx))
+    norm_layer, norm_kwargs = my_tools.get_norm_layer(wandb.config.norm, len(ctx))
     model_kwargs = {
         'nclass': data_factory.num_class,
         'backbone': wandb.config.backbone,
@@ -85,6 +85,7 @@ def train(cfg, ctx_lst, project_name, log_interval=5, no_val=False, lr=None, wd=
                                   lr_mult=wandb.config.lr_mult,
                                   backbone_init_manner=wandb.config.backbone_init.get('manner'),
                                   backbone_ckpt=wandb.config.backbone_init.get('backbone_ckpt'),
+                                  prior_classes=wandb.config.backbone_init.get('prior_classes'),
                                   ctx=ctx)
     if net.symbolize:
         net.hybridize()
@@ -96,7 +97,8 @@ def train(cfg, ctx_lst, project_name, log_interval=5, no_val=False, lr=None, wd=
                                          crop_size=wandb.config.crop_size)
     train_iter = DataLoader(train_set, wandb.config.bs_train, shuffle=True, last_batch='discard',
                             num_workers=num_worker)
-    val_set = data_factory.seg_dataset(split='val', mode='val', transform=my_tools.image_transform(),
+    val_set = data_factory.seg_dataset(split='val',
+                                       mode='val', transform=my_tools.image_transform(),
                                        base_size=wandb.config.base_size,
                                        crop_size=wandb.config.crop_size)
     val_iter = DataLoader(val_set, wandb.config.bs_val, shuffle=False, last_batch='keep',
@@ -142,6 +144,7 @@ def train(cfg, ctx_lst, project_name, log_interval=5, no_val=False, lr=None, wd=
     wandb.config.start_time = t_start
 
     best_score = .0
+    best_epoch = 0
     for epoch in range(wandb.config.epochs):
         train_loss = .0
         tbar = tqdm(train_iter)
@@ -156,9 +159,9 @@ def train(cfg, ctx_lst, project_name, log_interval=5, no_val=False, lr=None, wd=
             trainer.step(wandb.config.bs_train)
             nd.waitall()
             train_loss += sum([loss.mean().asscalar() for loss in loss_gpus]) / len(loss_gpus)
-            tbar.set_description('Trn-epoch-%d, %s, loss %.5f'
-                                 % (epoch, my_tools.get_strftime('%Y-%m-%d %H:%M:%S'),
-                                    train_loss / (i + 1)))
+            tbar.set_description('Epoch-%d [training], loss %.5f, %s'
+                                 % (epoch, train_loss / (i + 1),
+                                    my_tools.get_strftime('%Y-%m-%d %H:%M:%S')))
             if (i % log_interval == 0) or (i + 1 == len(train_iter)):
                 wandb.log({f'train_loss_batch, interval={log_interval}': train_loss / (i + 1)})
 
@@ -176,7 +179,7 @@ def train(cfg, ctx_lst, project_name, log_interval=5, no_val=False, lr=None, wd=
                     loss_gpus.append(criterion(*gpu_output, gpu_target))
                     metric.update(gpu_target, gpu_output[0])
                 val_loss += sum([loss.mean().asscalar() for loss in loss_gpus]) / len(loss_gpus)
-                vbar.set_description('Val-epoch-%d, PA %.4f, mIoU %.4f'
+                vbar.set_description('Epoch-%d [validation], PA %.4f, mIoU %.4f'
                                      % (epoch, metric.get()[0], metric.get()[1]))
                 nd.waitall()
             pix_acc, mean_iou = metric.get()
@@ -192,7 +195,10 @@ def train(cfg, ctx_lst, project_name, log_interval=5, no_val=False, lr=None, wd=
                                          time_stamp=wandb.config.start_time,
                                          is_best=True)
                 best_score = mean_iou
+                best_epoch = epoch
 
+    logger.info(f'Best val mIoU={round(best_score * 100, 2)} at epoch: {best_epoch}')
+    wandb.config.best_epoch = best_epoch
     my_tools.save_checkpoint(model=net,
                              model_name=wandb.config.model_name.lower(),
                              backbone=wandb.config.backbone.lower(),

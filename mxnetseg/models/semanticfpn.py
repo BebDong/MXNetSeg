@@ -2,15 +2,15 @@
 
 from mxnet.gluon import nn
 from .base import SegBaseResNet
-from mxnetseg.nn import ConvBlock, LateralFusion, UpscaleLayer
-from mxnetseg.tools import MODELS
+from mxnetseg.nn import ConvModule2d, LateralFusion, HybridSequentialUpscale
+from mxnetseg.utils import MODELS
 
 
 @MODELS.add_component
 class SemanticFPN(SegBaseResNet):
     """
     PanopticFPN with only semantic segmentation branch.
-    Reference:  [1] A. Kirillov, R. Girshick, K. He, and P. Dollár, “Panoptic Feature
+    Reference:  A. Kirillov, R. Girshick, K. He, and P. Dollár, “Panoptic Feature
         Pyramid Networks,” in IEEE Conference on Computer Vision and Pattern Recognition, 2019.
     """
 
@@ -70,13 +70,13 @@ class _SemanticBranch(nn.HybridBlock):
     def _make_layer(stages, channels, norm_layer=nn.BatchNorm, norm_kwargs=None):
         # scale: 1/4 --> 1/4
         if stages == 0:
-            layer = ConvBlock(channels, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            layer = ConvModule2d(channels, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             return layer
         # n = 2 ^ stages
         # scale: 1/(4 * n) --> 1/4
-        layer = UpscaleLayer()
+        layer = HybridSequentialUpscale()
         for _ in range(stages):
-            layer.add(ConvBlock(channels, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+            layer.add(ConvModule2d(channels, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         return layer
 
 
@@ -84,7 +84,7 @@ class _FPNBranch(nn.HybridBlock):
     def __init__(self, capacity=256, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_FPNBranch, self).__init__()
         with self.name_scope():
-            self.conv = ConvBlock(capacity, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv = ConvModule2d(capacity, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.lateral16x = LateralFusion(capacity, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.lateral8x = LateralFusion(capacity, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.lateral4x = LateralFusion(capacity, norm_layer=norm_layer, norm_kwargs=norm_kwargs)

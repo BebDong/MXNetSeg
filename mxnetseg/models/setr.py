@@ -4,15 +4,15 @@ from mxnet import init
 from mxnet.gluon import nn
 from .base import SegBaseModel
 from .backbone import vit_large_16
-from mxnetseg.tools import MODELS
-from mxnetseg.nn import ConvBlock, HybridConcurrentSep
+from mxnetseg.utils import MODELS
+from mxnetseg.nn import ConvModule2d, HybridConcurrentIsolate
 
 
 @MODELS.add_component
 class SETR(SegBaseModel):
     def __init__(self, nclass, aux=True, backbone='vit_large_16', height=None, width=None,
                  base_size=520, crop_size=480, pretrained_base=False, norm_layer=nn.BatchNorm,
-                 norm_kwargs=None, decoder='mla', layer_norm_eps=1e-6, **kwargs):
+                 norm_kwargs=None, decoder='pup', layer_norm_eps=1e-6, **kwargs):
         super(SETR, self).__init__(nclass, aux, height, width, base_size, crop_size, symbolize=False)
         assert backbone == 'vit_large_16', 'only support vit_large_16 for now'
         assert decoder in ('naive', 'pup', 'mla'), 'decoder must be any of (naive, pup, mla)'
@@ -43,7 +43,7 @@ class SETR(SegBaseModel):
             out_indices = (6, 12, 18, 24)
             head = _MLAHead
         out_indices = tuple([i - 1 for i in out_indices])
-        layer_norms = HybridConcurrentSep()
+        layer_norms = HybridConcurrentIsolate()
         for i in range(len(out_indices)):
             layer_norms.add(nn.LayerNorm(epsilon=layer_norm_eps))
         return out_indices, layer_norms, head
@@ -82,7 +82,7 @@ class _NaiveHead(nn.HybridBlock):
         with self.name_scope():
             self.head = _SegHead(nclass, norm_layer, norm_kwargs)
             if self.aux:
-                self.aux_head = HybridConcurrentSep()
+                self.aux_head = HybridConcurrentIsolate()
                 self.aux_head.add(
                     _SegHead(nclass, norm_layer, norm_kwargs),
                     _SegHead(nclass, norm_layer, norm_kwargs),
@@ -104,13 +104,13 @@ class _PUPHead(nn.HybridBlock):
         super(_PUPHead, self).__init__()
         self.aux = aux
         with self.name_scope():
-            self.conv0 = ConvBlock(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv1 = ConvBlock(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv2 = ConvBlock(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv3 = ConvBlock(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv4 = ConvBlock(nclass, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv0 = ConvModule2d(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv1 = ConvModule2d(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv2 = ConvModule2d(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3 = ConvModule2d(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv4 = ConvModule2d(nclass, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             if self.aux:
-                self.aux_head = HybridConcurrentSep()
+                self.aux_head = HybridConcurrentIsolate()
                 self.aux_head.add(
                     _SegHead(nclass, norm_layer, norm_kwargs),
                     _SegHead(nclass, norm_layer, norm_kwargs),
@@ -119,14 +119,13 @@ class _PUPHead(nn.HybridBlock):
                 )
 
     def hybrid_forward(self, F, x, *args, **kwargs):
-        _, _, h, w = x.shape
         outputs = []
         out = self.conv0(x)
-        out = F.contrib.BilinearResize2D(out, height=h * 2, width=h * 2)
+        out = F.contrib.BilinearResize2D(out, scale_height=2., scale_width=2.)
         out = self.conv1(out)
-        out = F.contrib.BilinearResize2D(out, height=h * 4, width=h * 4)
+        out = F.contrib.BilinearResize2D(out, scale_height=2., scale_width=2.)
         out = self.conv2(out)
-        out = F.contrib.BilinearResize2D(out, height=h * 8, width=h * 8)
+        out = F.contrib.BilinearResize2D(out, scale_height=2., scale_width=2.)
         out = self.conv4(self.conv3(out))
         outputs.append(out)
         if self.aux:
@@ -141,34 +140,34 @@ class _MLAHead(nn.HybridBlock):
         self.aux = aux
         with self.name_scope():
             # top-down aggregation
-            self.conv1x1_p5 = ConvBlock(256, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv1x1_p4 = ConvBlock(256, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv1x1_p3 = ConvBlock(256, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv1x1_p2 = ConvBlock(256, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv3x3_p5 = ConvBlock(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv3x3_p4 = ConvBlock(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv3x3_p3 = ConvBlock(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv3x3_p2 = ConvBlock(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv1x1_p5 = ConvModule2d(256, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv1x1_p4 = ConvModule2d(256, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv1x1_p3 = ConvModule2d(256, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv1x1_p2 = ConvModule2d(256, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3x3_p5 = ConvModule2d(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3x3_p4 = ConvModule2d(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3x3_p3 = ConvModule2d(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv3x3_p2 = ConvModule2d(256, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             # segmentation head
             self.head5 = nn.HybridSequential()
             self.head5.add(
-                ConvBlock(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs),
-                ConvBlock(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                ConvModule2d(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs),
+                ConvModule2d(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             self.head4 = nn.HybridSequential()
             self.head4.add(
-                ConvBlock(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs),
-                ConvBlock(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                ConvModule2d(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs),
+                ConvModule2d(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             self.head3 = nn.HybridSequential()
             self.head3.add(
-                ConvBlock(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs),
-                ConvBlock(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                ConvModule2d(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs),
+                ConvModule2d(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             self.head2 = nn.HybridSequential()
             self.head2.add(
-                ConvBlock(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs),
-                ConvBlock(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+                ConvModule2d(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs),
+                ConvModule2d(128, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
             self.head = nn.Conv2D(nclass, 1, in_channels=128 * 4)
             if self.aux:
-                self.aux_head = HybridConcurrentSep()
+                self.aux_head = HybridConcurrentIsolate()
                 self.aux_head.add(
                     _SegHead(nclass, norm_layer, norm_kwargs),
                     _SegHead(nclass, norm_layer, norm_kwargs),
@@ -205,7 +204,7 @@ class _SegHead(nn.HybridBlock):
     def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_SegHead, self).__init__()
         with self.name_scope():
-            self.conv1 = ConvBlock(256, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+            self.conv1 = ConvModule2d(256, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
             self.conv2 = nn.Conv2D(nclass, 1, in_channels=256)
 
     def hybrid_forward(self, F, x, *args, **kwargs):

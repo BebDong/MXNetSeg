@@ -19,7 +19,6 @@ class SegBaseModel(HybridBlock, ABC):
         self._up_kwargs = {'height': height, 'width': width}
         self.base_size = base_size
         self.crop_size = crop_size
-
         self.symbolize = symbolize
 
     @abstractmethod

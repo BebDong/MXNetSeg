@@ -2,8 +2,8 @@
 
 from mxnet.gluon import nn
 from .base import SegBaseResNet
-from mxnetseg.nn import FCNHead, PyramidPooling
-from mxnetseg.tools import MODELS
+from mxnetseg.nn import FCNHead, PyramidPoolingModule
+from mxnetseg.utils import MODELS
 
 
 @MODELS.add_component
@@ -45,7 +45,7 @@ class _PyramidHead(nn.HybridBlock):
     def __init__(self, nclass, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_PyramidHead, self).__init__()
         with self.name_scope():
-            self.pool = PyramidPooling(2048, norm_layer, norm_kwargs, reduction=4)
+            self.pool = PyramidPoolingModule(2048, norm_layer, norm_kwargs, reduction=4)
             self.seg_head = FCNHead(nclass, 4096, norm_layer, norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):

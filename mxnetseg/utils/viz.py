@@ -55,11 +55,12 @@ def plot_features(features: nd.NDArray, scope: int = 9):
         plt.subplot(row, col, i + 1)
         plt.imshow(feature_map)
         axis('off')
-        title(f"feature map {i}")
+        # title(f"feature map {i}")
     plt.show()
     # overlaps
     feature_map_sum = sum(ele for ele in feature_map_combination)
     plt.imshow(feature_map_sum)
+    axis('off')
     plt.show()
 
 
@@ -83,14 +84,13 @@ def overlap_heat_map(img_path: str, heat_map: Union[np.ndarray, nd.NDArray],
     return overlap
 
 
-def plot_heatmap(heatmap: Union[nd.NDArray, np.ndarray], fig_width=16, cmap='YlGnBu_r',
+def plot_heatmap(heatmap: Union[nd.NDArray, np.ndarray], fig_width=16,
                  save_pth: str = None, **kwargs):
     """
     plot heat-map which keeps height-width ratio
 
     :param heatmap: array of shape HW
     :param fig_width: width of figure
-    :param cmap: color of heat-map
     :param save_pth: save plot when not none
     :return:
     """
@@ -103,7 +103,7 @@ def plot_heatmap(heatmap: Union[nd.NDArray, np.ndarray], fig_width=16, cmap='YlG
     plt.figure(figsize=(fig_width, int(fig_width * ratio)))
 
     seaborn.set()
-    seaborn.heatmap(heatmap, cmap=cmap, **kwargs)
+    seaborn.heatmap(heatmap, **kwargs)
 
     plt.axis('off')
 
@@ -111,7 +111,7 @@ def plot_heatmap(heatmap: Union[nd.NDArray, np.ndarray], fig_width=16, cmap='YlG
         dir_path, _ = os.path.split(save_pth)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-        plt.savefig(save_pth, bbox_inches='tight')
+        plt.savefig(save_pth, bbox_inches='tight', pad_inches=0)
         plt.close()
     else:
         plt.show()

@@ -9,6 +9,7 @@ from .bdd import BDD100K
 from .camvid import CamVid
 from .citycoarse import CityCoarse
 from .cityscapes import Cityscapes
+from .cocostuff import COCOStuff
 from .gatech import GATECH
 from .mapillary import Mapillary
 from .mhp import MHPV1

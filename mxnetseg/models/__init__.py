@@ -5,12 +5,14 @@ from .base import *
 from .deeplab import *
 from .swiftnet import *
 from .acfnet import ACFNet
+from .alignseg import AlignSeg
 from .att2scale import AttentionToScale
 from .attanet import AttaNet
 from .bisenet import *
 from .danet import DANet
 from .denseaspp import DenseASPP
 from .eprnet import EPRNet
+from .fapn import FaPN
 from .fcn import FCNResNet, FCNMobileNet
 from .ladderdensenet import LadderDenseNet
 from .pspnet import PSPNet

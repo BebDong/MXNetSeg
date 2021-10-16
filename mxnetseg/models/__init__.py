@@ -12,8 +12,9 @@ from .bisenet import *
 from .danet import DANet
 from .denseaspp import DenseASPP
 from .eprnet import EPRNet
-from .fapn import FaPN
 from .fcn import FCNResNet, FCNMobileNet
+from .gffnet import GFFNet
+from .fapn import FaPN
 from .ladderdensenet import LadderDenseNet
 from .pspnet import PSPNet
 from .seenet import SeENet

@@ -25,7 +25,8 @@ This project provides modular implementation for state-of-the-art semantic segme
   - Dual Attention Network for Scene Segmentation [DANet, CVPR2019, [paper](https://openaccess.thecvf.com/content_CVPR_2019/papers/Fu_Dual_Attention_Network_for_Scene_Segmentation_CVPR_2019_paper.pdf)]
   - In Defense of Pre-trained ImageNet Architectures for Real-time Semantic Segmentation of Road-driving Images [SwiftNet, CVPR2019, [paper](http://openaccess.thecvf.com/content_CVPR_2019/papers/Orsic_In_Defense_of_Pre-Trained_ImageNet_Architectures_for_Real-Time_Semantic_Segmentation_CVPR_2019_paper.pdf)]
   - Panoptic Feature Pyramid Networks [SemanticFPN, CVPR2019, [paper](https://openaccess.thecvf.com/content_CVPR_2019/papers/Kirillov_Panoptic_Feature_Pyramid_Networks_CVPR_2019_paper.pdf)]
-  - Attention-guided Chained Context Aggregation for Semantic Segmentation [CANet, arXiv2020, [paper](https://arxiv.org/abs/2002.12041)]
+  - Gated Fully Fusion for Semantic Segmentation [GFFNet, AAAI2020, [paper](https://ojs.aaai.org/index.php/AAAI/article/view/6805)]
+  - Attention-guided Chained Context Aggregation for Semantic Segmentation [CANetv1, IMAVIS2021, [paper](https://www.sciencedirect.com/science/article/pii/S0262885621002146)]
   - EPRNet: Efficient Pyramid Representation Network for Real-Time Street Scene Segmentation [EPRNet, TITS2021, [paper](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9384352)]
   - AttaNet: Attention-Augmented Network for Fast and Accurate Scene Parsing [AttaNet, AAAI2021, [paper](https://www.aaai.org/AAAI21Papers/AAAI-103.SongQ.pdf)]
   - An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale [ViT, ICLR2021, [paper](https://arxiv.org/pdf/2010.11929.pdf)]
@@ -43,18 +44,18 @@ We note that:
 
 ### Cityscapes
 
-| Model     | Backbone  |  OS  | #Params |    TrainSet     | EvalSet | mIoU | \*mIoU |
-| :-------- | :-------: | :--: | :-----: | :-------------: | :-----: | :--: | :----: |
-| BiSeNet   | ResNet18  |  32  |  13.2M  |  *train_fine*   |  *val*  | 71.6 |  74.7  |
-| BiSeNet   | ResNet18  |  32  |  13.2M  | *trainval_fine* | *test*  |  -   |  74.8  |
-| FCN       | ResNet18  |  32  |  12.4M  |  *train_fine*   |  *val*  | 64.9 |  68.1  |
-| FCN       | ResNet18  |  8   |  12.4M  |  *train_fine*   |  *val*  | 68.3 |  69.9  |
-| FCN       | ResNet50  |  8   |  28.4M  |  *train_fine*   |  *val*  | 71.7 |   -    |
-| FCN       | ResNet101 |  8   |  47.5M  |  *train_fine*   |  *val*  | 74.5 |   -    |
-| PSPNet    | ResNet101 |  8   |  56.4M  |  *train_fine*   |  *val*  | 78.2 |  79.5  |
+|   Model   | Backbone  |  OS  | #Params |    TrainSet     | EvalSet | mIoU | \*mIoU |
+| :-------: | :-------: | :--: | :-----: | :-------------: | :-----: | :--: | :----: |
+|  BiSeNet  | ResNet18  |  32  |  13.2M  |  *train_fine*   |  *val*  | 71.6 |  74.7  |
+|  BiSeNet  | ResNet18  |  32  |  13.2M  | *trainval_fine* | *test*  |  -   |  74.8  |
+|    FCN    | ResNet18  |  32  |  12.4M  |  *train_fine*   |  *val*  | 64.9 |  68.1  |
+|    FCN    | ResNet18  |  8   |  12.4M  |  *train_fine*   |  *val*  | 68.3 |  69.9  |
+|    FCN    | ResNet50  |  8   |  28.4M  |  *train_fine*   |  *val*  | 71.7 |   -    |
+|    FCN    | ResNet101 |  8   |  47.5M  |  *train_fine*   |  *val*  | 74.5 |   -    |
+|  PSPNet   | ResNet101 |  8   |  56.4M  |  *train_fine*   |  *val*  | 78.2 |  79.5  |
 | DeepLabv3 | ResNet101 |  8   |  58.9M  |  *train_fine*   |  *val*  | 79.3 |  80.0  |
 | DenseASPP | ResNet101 |  8   |  69.4M  |  *train_fine*   |  *val*  | 78.7 |  79.8  |
-| DANet     | ResNet101 |  8   |  66.7M  |  *train_fine*   |  *val*  | 79.7 |  80.9  |
+|   DANet   | ResNet101 |  8   |  66.7M  |  *train_fine*   |  *val*  | 79.7 |  80.9  |
 
 ### ADE20K
 
@@ -64,20 +65,20 @@ We note that:
 
 ### Pascal VOC 2012
 
-| Model            | Backbone  |  OS  |  TrainSet   | EvalSet |  PA  | mIoU | \*PA | \*mIoU |
-| :--------------- | :-------: | :--: | :---------: | :-----: | :--: | :--: | :--: | :----: |
-| FCN              | ResNet101 |  8   | *train_aug* |  *val*  | 94.4 | 74.6 | 94.5 |  75.0  |
-| AttentionToScale | ResNet101 |  8   | *train_aug* |  *val*  | 94.8 | 77.1 |  -   |   -    |
-| PSPNet           | ResNet101 |  8   | *train_aug* |  *val*  | 95.1 | 78.1 | 95.3 |  78.5  |
-| DeepLabv3        | ResNet101 |  8   | *train_aug* |  *val*  | 95.5 | 80.1 | 95.6 |  80.4  |
-| DeepLabv3+       | ResNet101 |  8   | *train_aug* |  *val*  | 95.5 | 79.9 | 95.6 |  80.1  |
+|   Model    | Backbone  |  OS  |  TrainSet   | EvalSet |  PA  | mIoU | \*PA | \*mIoU |
+| :--------: | :-------: | :--: | :---------: | :-----: | :--: | :--: | :--: | :----: |
+|    FCN     | ResNet101 |  8   | *train_aug* |  *val*  | 94.4 | 74.6 | 94.5 |  75.0  |
+| Att2Scale  | ResNet101 |  8   | *train_aug* |  *val*  | 94.8 | 77.1 |  -   |   -    |
+|   PSPNet   | ResNet101 |  8   | *train_aug* |  *val*  | 95.1 | 78.1 | 95.3 |  78.5  |
+| DeepLabv3  | ResNet101 |  8   | *train_aug* |  *val*  | 95.5 | 80.1 | 95.6 |  80.4  |
+| DeepLabv3+ | ResNet101 |  8   | *train_aug* |  *val*  | 95.5 | 79.9 | 95.6 |  80.1  |
 
 ### NYUv2
 
-| Model      | Backbone  |  OS  | TrainSet | EvalSet |  PA  | mIoU | *PA  | *mIoU |
-| :--------- | :-------: | :--: | :------: | :-----: | :--: | :--: | :--: | :---: |
-| FCN        | ResNet101 |  8   | *train*  |  *val*  | 69.2 | 39.7 | 70.2 | 41.0  |
-| PSPNet     | ResNet101 |  8   | *train*  |  *val*  | 71.3 | 43.0 | 71.9 | 43.6  |
+|   Model    | Backbone  |  OS  | TrainSet | EvalSet |  PA  | mIoU | *PA  | *mIoU |
+| :--------: | :-------: | :--: | :------: | :-----: | :--: | :--: | :--: | :---: |
+|    FCN     | ResNet101 |  8   | *train*  |  *val*  | 69.2 | 39.7 | 70.2 | 41.0  |
+|   PSPNet   | ResNet101 |  8   | *train*  |  *val*  | 71.3 | 43.0 | 71.9 | 43.6  |
 | DeepLabv3+ | ResNet101 |  8   | *train*  |  *val*  | 73.5 | 46.0 | 74.3 | 47.2  |
 
 ## Environment

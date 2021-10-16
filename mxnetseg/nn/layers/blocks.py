@@ -5,7 +5,7 @@ from mxnet.gluon import nn
 from mxnet.gluon.contrib.nn import HybridConcurrent
 from .bricks import ConvModule2d
 
-__all__ = ['FCNHead', 'AuxHead', 'GlobalFlow', 'PyramidPoolingModule', 'GCN', 'ASPPModule',
+__all__ = ['FCNHead', 'AuxHead', 'GlobalFlow', 'PPModule', 'GCN', 'ASPPModule',
            'DenseASPPModule', 'SeEModule', 'LateralFusion', 'SelfAttentionModule']
 
 
@@ -61,7 +61,7 @@ class GlobalFlow(nn.HybridBlock):
         return out
 
 
-class PyramidPoolingModule(nn.HybridBlock):
+class PPModule(nn.HybridBlock):
     """
     Pyramid Pooling Module.
     Reference:
@@ -71,7 +71,7 @@ class PyramidPoolingModule(nn.HybridBlock):
 
     def __init__(self, in_channels, norm_layer=nn.BatchNorm, norm_kwargs=None,
                  activation='relu', reduction=4):
-        super(PyramidPoolingModule, self).__init__()
+        super(PPModule, self).__init__()
         with self.name_scope():
             self.conv1 = ConvModule2d(in_channels // reduction, 1, in_channels=in_channels,
                                       norm_layer=norm_layer, norm_kwargs=norm_kwargs,

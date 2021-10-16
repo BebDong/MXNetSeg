@@ -4,8 +4,8 @@
 # supported models (case-sensitive):
 # 'DeepLabv3', 'DeepLabv3PlusX', 'DeepLabv3PlusR', 'SwiftResNet', 'SwiftResNetPr',
 # 'ACFNet', 'AlignSeg', 'AttentionToScale', 'AttaNet', 'BiSeNetX', 'BiSeNetR', 'DANet',
-# 'DenseASPP', 'FaPN', 'FCNResNet', 'FCNMobileNet', 'LadderDenseNet', 'PSPNet', 'SeENet',
-# 'SemanticFPN', 'SETR',
+# 'DenseASPP', 'FaPN', 'FCNResNet', 'FCNMobileNet', 'GFFNet', 'LadderDenseNet', 'PSPNet',
+# 'SeENet', 'SemanticFPN', 'SETR',
 # 'EPRNet', 'CANetv1', 'CANetv2'
 model_name: AlignSeg
 backbone: resnet101

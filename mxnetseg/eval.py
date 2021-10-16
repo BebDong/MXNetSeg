@@ -15,32 +15,31 @@ from mxnetseg.engine import EvalHelper
 def parse_args():
     """
     Models:
-        'DeepLabv3', 'DeepLabv3PlusX', 'DeepLabv3PlusR', 'SwiftResNet', 'SwiftResNetPr',
-        'ACFNet', 'AlignSeg', 'AttentionToScale', 'AttaNet', 'BiSeNetX', 'BiSeNetR', 'DANet',
-        'DenseASPP', 'FaPN', 'FCNResNet', 'FCNMobileNet', 'LadderDenseNet', 'PSPNet', 'SeENet',
-        'SemanticFPN', 'SETR',
-        'EPRNet', 'CANetv1', 'CANetv2'
+        # 'DeepLabv3', 'DeepLabv3PlusX', 'DeepLabv3PlusR', 'SwiftResNet', 'SwiftResNetPr',
+        # 'ACFNet', 'AlignSeg', 'AttentionToScale', 'AttaNet', 'BiSeNetX', 'BiSeNetR', 'DANet',
+        # 'DenseASPP', 'FaPN', 'FCNResNet', 'FCNMobileNet', 'GFFNet', 'LadderDenseNet', 'PSPNet',
+        # 'SeENet', 'SemanticFPN', 'SETR',
+        # 'EPRNet', 'CANetv1', 'CANetv2'
     Datasets:
         'MSCOCO','ADE20K', 'Aeroscapes', 'BDD100K', 'CamVid', 'CityCoarse', 'Cityscapes', 'COCOStuff',
         'GATECH', 'Mapillary', 'MHPV1', 'NYUv2', 'PascalContext', 'SBD', 'SiftFlow',
         'StanfordBackground', 'SUNRGBD', 'PascalVOC', 'PascalVOCAug', 'WeizmannHorses'
-
     """
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--purpose', type=str, default='score',
                         help='score/speed')
 
-    parser.add_argument('--model', type=str, default='PSPNet',
+    parser.add_argument('--model', type=str, default='AlignSeg',
                         help='model name')
-    parser.add_argument('--backbone', type=str, default='resnet50',
+    parser.add_argument('--backbone', type=str, default='resnet101',
                         help='backbone network')
     parser.add_argument('--dilate', action='store_true', default=True,
                         help='dilated backbone')
-    parser.add_argument('--aux', action='store_true', default=True,
+    parser.add_argument('--aux', action='store_true', default=False,
                         help='auxiliary segmentation head')
     parser.add_argument('--checkpoint', type=str,
-                        default='pspnet_resnet50_cityscapes_20211013_203221.params',
+                        default='alignseg_resnet101_cityscapes_20211014_224633.params',
                         help='checkpoint')
 
     parser.add_argument('--ctx', type=int, nargs='+', default=(0,),

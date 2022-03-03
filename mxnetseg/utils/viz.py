@@ -92,7 +92,6 @@ def plot_heatmap(heatmap: Union[nd.NDArray, np.ndarray], fig_width=16,
     :param heatmap: array of shape HW
     :param fig_width: width of figure
     :param save_pth: save plot when not none
-    :return:
     """
     if isinstance(heatmap, nd.NDArray):
         heatmap = heatmap.asnumpy()

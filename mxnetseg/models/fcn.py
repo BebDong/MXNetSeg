@@ -1,9 +1,11 @@
 # coding=utf-8
 
 from mxnet.gluon import nn
+from mxnetseg.utils import MODELS
 from mxnetseg.nn import FCNHead
 from .base import SegBaseResNet, SegBaseMobileNet
-from mxnetseg.utils import MODELS
+
+__all__ = ['FCNResNet', 'FCNMobileNet']
 
 
 @MODELS.add_component

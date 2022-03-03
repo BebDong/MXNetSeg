@@ -9,11 +9,12 @@
 # 'EPRNet', 'CANetv1', 'CANetv2'
 model_name: AlignSeg
 backbone: resnet101
-norm: sbn
 aux: False
 aux_weight: ~
 lr_mult: 1
 dilate: False
+# BN, GN, SyncBN
+norm_layer: SyncBN
 
 # [init]
 # backbone_init: one of {~, cls, seg}

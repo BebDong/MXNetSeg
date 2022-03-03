@@ -49,13 +49,13 @@ def get_contexts(ctx_id):
 
 def get_norm_layer(bn: str, num_ctx=1):
     """get corresponding norm layer"""
-    if bn == 'bn':
+    if bn == 'BN':
         norm_layer = BatchNorm
         norm_kwargs = None
-    elif bn == 'sbn':
+    elif bn == 'SyncBN':
         norm_layer = SyncBatchNorm
         norm_kwargs = {'num_devices': num_ctx}
-    elif bn == 'gn':
+    elif bn == 'GN':
         norm_layer = GroupNorm
         norm_kwargs = {'ngroups': 32}
     else:
@@ -88,6 +88,7 @@ def misclassified_pixels(prob: nd.NDArray, label: nd.NDArray, ignore_label: int 
 
     # determine equal or not to get misclassified pixels
     pred = nd.squeeze(nd.argmax(prob, axis=0)).astype('int32')
+    label = label.astype('int32')
     mis_classify = (pred == label).asnumpy()
 
     # deal with ignored label via numpy

@@ -31,7 +31,6 @@ def _get_criterion(aux, aux_weight, focal_kwargs=None, class_weight=None,
         return DiceLoss(**dice_kwargs)
     else:
         from gluoncv.loss import MixSoftmaxCrossEntropyLoss as MixedCELoss
-        # from mxnetseg.nn import MixedCELoss
         return MixedCELoss(aux, aux_weight=aux_weight)
 
 
@@ -68,7 +67,9 @@ def train(cfg, ctx_lst, project_name, log_interval=5, no_val=False, lr=None, wd=
     data_factory = DataFactory(wandb.config.data_name)
     model_factory = ModelFactory(wandb.config.model_name)
 
-    norm_layer, norm_kwargs = my_tools.get_norm_layer(wandb.config.norm, len(ctx))
+    norm_layer, norm_kwargs = my_tools.get_norm_layer(bn=wandb.config.norm_layer,
+                                                      num_ctx=len(ctx))
+
     model_kwargs = {
         'nclass': data_factory.num_class,
         'backbone': wandb.config.backbone,

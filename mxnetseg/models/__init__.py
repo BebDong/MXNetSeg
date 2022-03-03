@@ -12,7 +12,7 @@ from .bisenet import *
 from .danet import DANet
 from .denseaspp import DenseASPP
 from .eprnet import EPRNet
-from .fcn import FCNResNet, FCNMobileNet
+from .fcn import *
 from .gffnet import GFFNet
 from .fapn import FaPN
 from .ladderdensenet import LadderDenseNet
@@ -21,6 +21,7 @@ from .seenet import SeENet
 from .semanticfpn import SemanticFPN
 from .setr import SETR
 from .canet import *
+from .sainet import SAINet
 from mxnetseg.utils import validate_checkpoint, MODELS
 
 
@@ -45,7 +46,7 @@ class ModelFactory:
             if net.aux:
                 net.aux_head.initialize()
                 net.aux_head.collect_params().setattr('lr_mult', lr_mult)
-            print("ImageNet pre-trained backbone loaded & head random initialized.")
+            print(f"ImageNet pre-trained backbone loaded & head randomly initialized x{lr_mult}.")
         elif backbone_init_manner == 'seg':
             model_kwargs['nclass'] = prior_classes
             pretrain = self._class(**model_kwargs)

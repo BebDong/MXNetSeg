@@ -59,10 +59,11 @@ class EvalHelper:
 
     def _scales(self):
         if self._args.ms:
-            if self._args.data.lower() == 'gatech':
-                scales = (0.5, 0.8, 1.0, 1.2, 1.4)
-            elif 'camvid' in self._args.data.lower():
+            data_name = self._args.data.lower()
+            if any(['camvid' in data_name, 'city' in data_name]):
                 scales = (0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25)
+            elif data_name == 'gatech':
+                scales = (0.5, 0.8, 1.0, 1.2, 1.4)
             else:
                 scales = (0.5, 0.75, 1.0, 1.25, 1.5, 1.75)
         else:

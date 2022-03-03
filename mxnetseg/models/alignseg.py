@@ -3,7 +3,7 @@
 from mxnet.gluon import nn
 from .base import SegBaseResNet
 from mxnetseg.utils import MODELS
-from mxnetseg.nn import FCNHead, ConvModule2d
+from mxnetseg.nn import FCNHead, ConvModule2d, RCBlock
 
 
 @MODELS.add_component
@@ -50,7 +50,7 @@ class _AlignHead(nn.HybridBlock):
             self.align_2 = _AlignBlock(channels, norm_layer, norm_kwargs)
             self.align_3 = _AlignBlock(channels, norm_layer, norm_kwargs)
             self.align_4 = _AlignBlock(channels, norm_layer, norm_kwargs)
-            self.rcb = _RCBlock(channels, norm_layer, norm_kwargs)
+            self.rcb = RCBlock(channels, norm_layer, norm_kwargs)
             self.head = FCNHead(nclass, channels, norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
@@ -68,34 +68,14 @@ class _AlignBlock(nn.HybridBlock):
     def __init__(self, channels=256, norm_layer=nn.BatchNorm, norm_kwargs=None):
         super(_AlignBlock, self).__init__()
         with self.name_scope():
-            self.rcb_1 = _RCBlock(channels, norm_layer, norm_kwargs)
-            self.rcb_2 = _RCBlock(channels, norm_layer, norm_kwargs)
+            self.rcb_1 = RCBlock(channels, norm_layer, norm_kwargs)
+            self.rcb_2 = RCBlock(channels, norm_layer, norm_kwargs)
             self.align = _AlignFA(channels, norm_layer, norm_kwargs)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         high = self.rcb_1(x)
         low = self.rcb_2(args[0])
         return self.align(high, low)
-
-
-class _RCBlock(nn.HybridBlock):
-    def __init__(self, channels=256, norm_layer=nn.BatchNorm, norm_kwargs=None):
-        super(_RCBlock, self).__init__()
-        with self.name_scope():
-            self.conv1x1 = nn.Conv2D(channels, 1, use_bias=False)
-            self.conv3x3_1 = ConvModule2d(channels // 4, 3, 1, 1, norm_layer=norm_layer,
-                                          norm_kwargs=norm_kwargs)
-            self.conv3x3_2 = nn.Conv2D(channels, 3, 1, 1, use_bias=False)
-            self.bn = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
-            self.relu = nn.Activation('relu')
-
-    def hybrid_forward(self, F, x, *args, **kwargs):
-        x = self.conv1x1(x)
-        residual = x
-        x = self.conv3x3_1(x)
-        x = self.conv3x3_2(x)
-        x = self.relu(self.bn(x + residual))
-        return x
 
 
 class _AlignFA(nn.HybridBlock):

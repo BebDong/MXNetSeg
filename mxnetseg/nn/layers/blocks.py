@@ -6,7 +6,8 @@ from mxnet.gluon.contrib.nn import HybridConcurrent
 from .bricks import ConvModule2d
 
 __all__ = ['FCNHead', 'AuxHead', 'GlobalFlow', 'PPModule', 'GCN', 'ASPPModule',
-           'DenseASPPModule', 'SeEModule', 'LateralFusion', 'SelfAttentionModule']
+           'DenseASPPModule', 'SeEModule', 'LateralFusion', 'SelfAttentionModule',
+           'RCBlock']
 
 
 class FCNHead(nn.HybridBlock):
@@ -316,3 +317,30 @@ class SelfAttentionModule(nn.HybridBlock):
         out = F.reshape_like(out, x, lhs_begin=2, lhs_end=None, rhs_begin=2, rhs_end=None)
         out = F.broadcast_mul(gamma, out) + x
         return out
+
+
+class RCBlock(nn.HybridBlock):
+    """
+    Residual Convolutional Block for shape matching.
+    Reference:
+        Z. Huang, Y. Wei, X. Wang, H. Shi, W. Liu, and T. S. Huang, “AlignSeg: Feature-Aligned
+        Segmentation Networks,” IEEE Trans. Pattern Anal. Mach. Intell., vol. 8828, 2021.
+    """
+
+    def __init__(self, channels=256, norm_layer=nn.BatchNorm, norm_kwargs=None):
+        super(RCBlock, self).__init__()
+        with self.name_scope():
+            self.conv1x1 = nn.Conv2D(channels, 1, use_bias=False)
+            self.conv3x3_1 = ConvModule2d(channels // 4, 3, 1, 1, norm_layer=norm_layer,
+                                          norm_kwargs=norm_kwargs)
+            self.conv3x3_2 = nn.Conv2D(channels, 3, 1, 1, use_bias=False)
+            self.bn = norm_layer(**({} if norm_kwargs is None else norm_kwargs))
+            self.relu = nn.Activation('relu')
+
+    def hybrid_forward(self, F, x, *args, **kwargs):
+        x = self.conv1x1(x)
+        residual = x
+        x = self.conv3x3_1(x)
+        x = self.conv3x3_2(x)
+        x = self.relu(self.bn(x + residual))
+        return x

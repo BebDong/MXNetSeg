@@ -3,12 +3,13 @@
 from mxnet import nd
 from mxnet.gluon.loss import Loss
 
-__all__ = ['MixedCELoss', 'WeightedCELoss', 'BootstrappedCELoss']
+__all__ = ['MixedCELoss', 'SmoothCELoss', 'MixedSmoothCELoss', 'WeightedCELoss',
+           'BootstrappedCELoss']
 
 
 class MixedCELoss(Loss):
     """
-    Cross-entropy loss with multiple auxiliary losses
+    Cross-entropy loss with multiple auxiliary losses, using log_softmax operator
     """
 
     def __init__(self, aux=False, aux_weight=None, batch_axis=0, ignore_label=-1, **kwargs):
@@ -41,6 +42,57 @@ class MixedCELoss(Loss):
             return self._base_forward(F, *inputs)
 
 
+class SmoothCELoss(Loss):
+    """
+    Cross-entropy loss with label smoothing, using SoftmaxOutput operator.
+    Adapted from: https://github.com/dmlc/gluon-cv/blob/master/gluoncv/loss.py
+    """
+
+    def __init__(self, batch_axis=0, ignore_label=-1, size_average=True, smooth_alpha=0,
+                 **kwargs):
+        super(SmoothCELoss, self).__init__(None, batch_axis, **kwargs)
+        self._sparse_label = True
+        self._ignore_label = ignore_label
+        self._size_average = size_average
+        self._smooth_alpha = smooth_alpha
+
+    def hybrid_forward(self, F, pred, label):
+        softmax_out = F.SoftmaxOutput(
+            pred, label.astype(pred.dtype), ignore_label=self._ignore_label,
+            multi_output=self._sparse_label, use_ignore=True,
+            normalization='valid' if self._size_average else 'null',
+            smooth_alpha=self._smooth_alpha)
+        loss = -F.pick(F.log(softmax_out), label, axis=1, keepdims=True)
+        loss = F.where(label.expand_dims(axis=1) == self._ignore_label,
+                       F.zeros_like(loss), loss)
+        return F.mean(loss, axis=self._batch_axis, exclude=True)
+
+
+class MixedSmoothCELoss(SmoothCELoss):
+    """
+    Cross-entropy loss with multiple auxiliary losses and label smoothing, using SoftmaxOutput.
+    Adapted from: https://github.com/dmlc/gluon-cv/blob/master/gluoncv/loss.py
+    """
+
+    def __init__(self, aux=True, aux_weight=0.2, batch_axis=0, ignore_label=-1,
+                 size_average=True, smooth_alpha=0.05, **kwargs):
+        super(MixedSmoothCELoss, self).__init__(batch_axis, ignore_label, size_average,
+                                                smooth_alpha, **kwargs)
+        self.aux = aux
+        self.aux_weight = aux_weight
+
+    def _aux_forward(self, F, pred1, pred2, label, **kwargs):
+        loss1 = super(MixedSmoothCELoss, self).hybrid_forward(F, pred1, label)
+        loss2 = super(MixedSmoothCELoss, self).hybrid_forward(F, pred2, label)
+        return loss1 + self.aux_weight * loss2
+
+    def hybrid_forward(self, F, *inputs, **kwargs):
+        if self.aux:
+            return self._aux_forward(F, *inputs, **kwargs)
+        else:
+            return super(MixedSmoothCELoss, self).hybrid_forward(F, *inputs, **kwargs)
+
+
 class WeightedCELoss(Loss):
     """
     Weighted cross-entropy loss.
@@ -66,7 +118,7 @@ class BootstrappedCELoss(Loss):
     Online bootstrapping of hard training pixels.
     Consider image crops within a batch as one crop.
     Reference:
-        [1] Z. Wu, C. Shen, and A. van den Hengel, “Bridging Category-level and Instance-level
+        Z. Wu, C. Shen, and A. van den Hengel, “Bridging Category-level and Instance-level
         Semantic Image Segmentation,” ArXiv, 2016.
     """
 

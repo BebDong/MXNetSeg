@@ -27,12 +27,13 @@ This project provides modular implementation for state-of-the-art semantic segme
   - Panoptic Feature Pyramid Networks [SemanticFPN, CVPR2019, [paper](https://openaccess.thecvf.com/content_CVPR_2019/papers/Kirillov_Panoptic_Feature_Pyramid_Networks_CVPR_2019_paper.pdf)]
   - Gated Fully Fusion for Semantic Segmentation [GFFNet, AAAI2020, [paper](https://ojs.aaai.org/index.php/AAAI/article/view/6805)]
   - Attention-guided Chained Context Aggregation for Semantic Segmentation [CANetv1, IMAVIS2021, [paper](https://www.sciencedirect.com/science/article/pii/S0262885621002146)]
-  - EPRNet: Efficient Pyramid Representation Network for Real-Time Street Scene Segmentation [EPRNet, TITS2021, [paper](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9384352)]
+  - EPRNet: Efficient Pyramid Representation Network for Real-Time Street Scene Segmentation [EPRNet, TITS2021, [paper](https://ieeexplore.ieee.org/document/9384352)]
   - AttaNet: Attention-Augmented Network for Fast and Accurate Scene Parsing [AttaNet, AAAI2021, [paper](https://www.aaai.org/AAAI21Papers/AAAI-103.SongQ.pdf)]
   - An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale [ViT, ICLR2021, [paper](https://arxiv.org/pdf/2010.11929.pdf)]
   - Rethinking Semantic Segmentation from a Sequence-to-Sequence Perspective with Transformers [SETR, CVPR2021, [paper](https://openaccess.thecvf.com/content/CVPR2021/papers/Zheng_Rethinking_Semantic_Segmentation_From_a_Sequence-to-Sequence_Perspective_With_Transformers_CVPR_2021_paper.pdf)]
   - FaPN: Feature-aligned Pyramid Network for Dense Image Prediction [FaPN, ICCV2021, [paper](http://www.shihuahuang.cn/fapn/)]
   - AlignSeg: Feature-Aligned Segmentation Networks [AlignSeg, TPAMI2021, [paper](https://ieeexplore.ieee.org/document/9366388)]
+  - Compensating for Local Ambiguity with Encoder-Decoder in Urban Scene Segmentation [CANetv2, TITS2022, [paper](https://ieeexplore.ieee.org/document/9733972)]
 
 ## Benchmarks
 
@@ -142,7 +143,17 @@ Please kindly cite our paper if you feel our codes help in your research.
   author={Tang, Quan and Liu, Fagui and Jiang, Jun and Zhang, Yu},
   journal={IEEE Transactions on Intelligent Transportation Systems},
   year={2021},
+  doi={10.1109/TITS.2021.3066401},
   publisher={IEEE}
 }
+
+@article{tang2022compe,
+	title={Compensating for Local Ambiguity With Encoder-Decoder in Urban Scene Segmentation}, 
+	author={Tang, Quan and Liu, Fagui and Zhang, Tong and Jiang, Jun and Zhang, Yu and Zhu, Boyuan and Tang, Xuhao},
+	journal={IEEE Transactions on Intelligent Transportation Systems},
+	year={2022},
+	doi={10.1109/TITS.2022.3157128},
+	publisher={IEEE}
+	}
 ```
 

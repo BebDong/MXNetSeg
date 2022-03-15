@@ -1,5 +1,5 @@
 # not ready
-mxnetseg/models/canet/canetv2.py
+mxnetseg/models/sainet.py
 
 # testing codes: ignore
 mxnetseg/flash/

@@ -21,7 +21,6 @@ from .seenet import SeENet
 from .semanticfpn import SemanticFPN
 from .setr import SETR
 from .canet import *
-from .sainet import SAINet
 from mxnetseg.utils import validate_checkpoint, MODELS
 
 

@@ -148,12 +148,12 @@ Please kindly cite our paper if you feel our codes help in your research.
 }
 
 @article{tang2022compe,
-	title={Compensating for Local Ambiguity With Encoder-Decoder in Urban Scene Segmentation}, 
-	author={Tang, Quan and Liu, Fagui and Zhang, Tong and Jiang, Jun and Zhang, Yu and Zhu, Boyuan and Tang, Xuhao},
-	journal={IEEE Transactions on Intelligent Transportation Systems},
-	year={2022},
-	doi={10.1109/TITS.2022.3157128},
-	publisher={IEEE}
-	}
+  title={Compensating for Local Ambiguity With Encoder-Decoder in Urban Scene Segmentation}, 
+  author={Tang, Quan and Liu, Fagui and Zhang, Tong and Jiang, Jun and Zhang, Yu and Zhu, Boyuan and Tang, Xuhao},
+  journal={IEEE Transactions on Intelligent Transportation Systems},
+  year={2022},
+  doi={10.1109/TITS.2022.3157128},
+  publisher={IEEE}
+}
 ```
 
